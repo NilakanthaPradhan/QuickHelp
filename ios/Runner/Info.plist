@@ -46,4 +46,6 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>QuickHelp needs your location to show nearby rentals.</string>
 </plist>
