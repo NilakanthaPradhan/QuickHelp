@@ -109,75 +109,202 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Book ${widget.serviceTitle}')),
-      body: Padding(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: Text('Book ${widget.serviceTitle}', style: const TextStyle(fontWeight: FontWeight.bold)),
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Providers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.separated(
-                itemCount: (_visibleProviders < providers.length) ? _visibleProviders + 1 : providers.length,
-                separatorBuilder: (context, index) => const Divider(height: 12),
-                itemBuilder: (context, i) {
-                  if (i < _visibleProviders && i < providers.length) {
-                    final p = providers[i];
-                    final selected = _selectedProviderIndex == i;
-                    return ListTile(
-                      leading: CircleAvatar(backgroundImage: NetworkImage(p['image'] as String)),
-                      title: Text(p['name'] as String),
-                      subtitle: Row(
+            const Text('Select Date & Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSelectionCard(
+                    icon: Icons.calendar_today,
+                    title: 'Date',
+                    value: _selectedDate == null ? 'Select Date' : _selectedDate!.toLocal().toString().split(' ')[0],
+                    onTap: _pickDate,
+                    isActive: _selectedDate != null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSelectionCard(
+                    icon: Icons.access_time,
+                    title: 'Time',
+                    value: _selectedTime == null ? 'Select Time' : _selectedTime!.format(context),
+                    onTap: _pickTime,
+                    isActive: _selectedTime != null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text('Location', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: _openMapPicker,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _pickedLocation != null ? Theme.of(context).primaryColor : Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
+                      child: const Icon(Icons.location_on, color: Colors.blue),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p['price'] as String),
-                          const SizedBox(width: 8),
-                          Icon(Icons.star, size: 14, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text((p['rating'] as double).toString()),
+                          Text(_pickedLocation == null ? 'Select Service Location' : 'Location Selected', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _pickedAddress?.isNotEmpty == true ? _pickedAddress! : (_pickedLocation != null ? '${_pickedLocation!.latitude.toStringAsFixed(4)}, ${_pickedLocation!.longitude.toStringAsFixed(4)}' : 'Tap to choose on map'),
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
-                      trailing: selected ? const Icon(Icons.check_circle, color: Colors.green) : ElevatedButton(
-                        onPressed: () => setState(() => _selectedProviderIndex = i),
-                        child: const Text('Select'),
-                      ),
-                      onTap: () => setState(() => _selectedProviderIndex = i),
-                    );
-                  }
-
-                  // load more tile
-                  return TextButton(
-                    onPressed: () => setState(() => _visibleProviders = (_visibleProviders + 3).clamp(0, providers.length)),
-                    child: const Text('Load more providers'),
-                  );
-                },
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
+                ),
               ),
             ),
+            const SizedBox(height: 24),
+            const Text('Select Provider', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: Text(_selectedDate == null ? 'No date selected' : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}')),
-                TextButton(onPressed: _pickDate, child: const Text('Pick Date')),
-              ],
+            ListView.separated(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: (_visibleProviders < providers.length) ? _visibleProviders + 1 : providers.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, i) {
+                if (i < _visibleProviders && i < providers.length) {
+                  final p = providers[i];
+                  final selected = _selectedProviderIndex == i;
+                  return InkWell(
+                    onTap: () => setState(() => _selectedProviderIndex = i),
+                    borderRadius: BorderRadius.circular(16),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: selected ? Theme.of(context).primaryColor : Colors.transparent, width: 2),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(radius: 28, backgroundImage: NetworkImage(p['image'] as String)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(p['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.star, size: 16, color: Colors.amber[700]),
+                                    const SizedBox(width: 4),
+                                    Text((p['rating'] as double).toString(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    const SizedBox(width: 10),
+                                    Text(p['price'] as String, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (selected) Icon(Icons.check_circle, color: Theme.of(context).primaryColor, size: 28),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _visibleProviders = (_visibleProviders + 3).clamp(0, providers.length)),
+                    child: const Text('View more providers'),
+                  ),
+                );
+              },
             ),
-            Row(
-              children: [
-                Expanded(child: Text(_selectedTime == null ? 'No time selected' : 'Time: ${_selectedTime!.format(context)}')),
-                TextButton(onPressed: _pickTime, child: const Text('Pick Time')),
-              ],
+            const SizedBox(height: 100), // space for bottom button
+          ],
+        ),
+      ),
+      bottomSheet: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))],
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _confirmBooking,
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+              child: const Text('Confirm Booking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(child: Text(_pickedLocation == null ? 'No location selected' : (_pickedAddress == null || _pickedAddress!.isEmpty) ? 'Location: ${_pickedLocation!.latitude.toStringAsFixed(4)}, ${_pickedLocation!.longitude.toStringAsFixed(4)}' : _pickedAddress!)),
-                TextButton(onPressed: _openMapPicker, child: const Text('Pick on Map')),
-              ],
-            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionCard({required IconData icon, required String title, required String value, required VoidCallback onTap, required bool isActive}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isActive ? Theme.of(context).primaryColor : Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: isActive ? Theme.of(context).primaryColor : Colors.grey),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(onPressed: _confirmBooking, child: const Text('Confirm Booking')),
-            ),
+            Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
