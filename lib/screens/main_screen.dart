@@ -3,6 +3,7 @@ import '../components/app_drawer.dart';
 import '../services/theme_service.dart';
 import 'services_screen.dart';
 import 'rental_finder_screen.dart';
+import 'chat_screen.dart';
 import 'profile_screen.dart';
 import 'settings_page.dart';
 
@@ -21,28 +22,9 @@ class _MainScreenState extends State<MainScreen> {
   static final List<Widget> _pages = <Widget>[
     const ServicesScreen(),
     const RentalFinderScreen(),
-    const SettingsPage(),
+    const ChatScreen(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    // Debug helper: auto-open drawer once on startup so we can verify drawer contents.
-    // This only runs in debug builds and will not affect production behavior.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // small delay to allow scaffold to settle
-      Future.delayed(const Duration(milliseconds: 600), () {
-        // Use scheduleMicrotask to avoid exceptions when not mounted
-        if (mounted) {
-          // Only open drawer in debug mode
-          assert(() {
-            _scaffoldKey.currentState?.openDrawer();
-            return true;
-          }());
-        }
-      });
-    });
-  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -91,8 +73,8 @@ class _MainScreenState extends State<MainScreen> {
         onTap: _onItemTapped,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         items: List.generate(3, (i) {
-          final icons = [Icons.home, Icons.room_service, Icons.settings];
-          final labels = ['Home', 'Rentals', 'Settings'];
+          final icons = [Icons.home, Icons.room_service, Icons.chat];
+          final labels = ['Home', 'Rentals', 'Chats'];
           return BottomNavigationBarItem(
             icon: TweenAnimationBuilder<double>(
               tween: Tween<double>(

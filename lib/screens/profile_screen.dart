@@ -61,6 +61,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                children: [
+                   ListTile(
+                    leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                    title: const Text('Past Bookings'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () => Navigator.of(context).pushNamed('/bookings'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline, color: Colors.blue),
+                    title: const Text('About Us'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (_) => const AlertDialog(
+                        title: Text('About QuickHelp'),
+                        content: Text('QuickHelp connects you with verified professionals instantly. Our mission is to make home services accessible and reliable for everyone.'),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.headset_mic, color: Colors.green),
+                    title: const Text('Contact Us'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () => showModalBottomSheet(
+                      context: context,
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                      builder: (_) => Container(
+                        padding: const EdgeInsets.all(24),
+                        width: double.infinity,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Contact Support', style: Theme.of(context).textTheme.headlineSmall),
+                            const SizedBox(height: 20),
+                            const ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.email, color: Colors.white)),
+                                title: Text('support@quickhelp.com')),
+                            const ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.phone, color: Colors.white)),
+                                title: Text('+91 1800 123 456')),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             Form(
               key: _formKey,
               child: Column(

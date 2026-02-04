@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../screens/profile_screen.dart';
+import '../services/theme_service.dart';
 
 
 class AppDrawer extends StatelessWidget {
@@ -25,12 +25,12 @@ class AppDrawer extends StatelessWidget {
                 child: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: ClipOval(
-                    child: SvgPicture.asset(
-                      'assets/logo.svg',
+                    child: Image.asset(
+                      'assets/logo.png',
                       fit: BoxFit.cover,
                       width: 48,
                       height: 48,
-                      placeholderBuilder: (ctx) => const Icon(Icons.person),
+                      errorBuilder: (ctx, err, stack) => const Icon(Icons.person),
                     ),
                   ),
                 ),
@@ -71,6 +71,40 @@ class AppDrawer extends StatelessWidget {
               Navigator.of(context).pop();
               Navigator.of(context).pushNamed('/bookings');
             },
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text('Theme Color', style: Theme.of(context).textTheme.bodySmall),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 12,
+              children: [
+                Colors.deepPurple,
+                Colors.blue,
+                Colors.orange,
+                Colors.teal,
+              ].map((color) {
+                return GestureDetector(
+                  onTap: () => ThemeService.instance.setSeedColor(color),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: ThemeService.instance.seedColor == color ? Theme.of(context).colorScheme.onSurface : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
           const Divider(),
           ListTile(
