@@ -37,25 +37,21 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             const Text('Theme', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Row(children: [
-              ChoiceChip(
-                label: const Text('Light'),
-                selected: _mode == ThemeMode.light,
-                onSelected: (_) => ThemeService.instance.setThemeMode(ThemeMode.light),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment<ThemeMode>(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode)),
+                  ButtonSegment<ThemeMode>(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode)),
+                  ButtonSegment<ThemeMode>(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.brightness_auto)),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (Set<ThemeMode> newSelection) {
+                  ThemeService.instance.setThemeMode(newSelection.first);
+                  setState(() {}); // Force rebuild to reflect change immediately in UI if listener doesn't catch it fast enough
+                },
               ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: const Text('Dark'),
-                selected: _mode == ThemeMode.dark,
-                onSelected: (_) => ThemeService.instance.setThemeMode(ThemeMode.dark),
-              ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: const Text('System'),
-                selected: _mode == ThemeMode.system,
-                onSelected: (_) => ThemeService.instance.setThemeMode(ThemeMode.system),
-              ),
-            ]),
+            ),
             const SizedBox(height: 16),
             // Live preview so users can see the theme and accent color effect
             Center(
