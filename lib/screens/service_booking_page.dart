@@ -24,6 +24,7 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
 
   int? _selectedProviderIndex;
   DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
   lat.LatLng? _pickedLocation;
   String? _pickedAddress;
   int _visibleProviders = 3;
@@ -39,6 +40,18 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
     if (picked != null) {
       if (!mounted) return;
       setState(() => _selectedDate = picked);
+    }
+  }
+
+  void _pickTime() async {
+    final now = TimeOfDay.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: now,
+    );
+    if (picked != null) {
+      if (!mounted) return;
+      setState(() => _selectedTime = picked);
     }
   }
 
@@ -67,16 +80,20 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
   }
 
   Future<void> _confirmBooking() async {
-    if (_selectedProviderIndex == null || _selectedDate == null || _pickedLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select provider, date and location')));
+    if (_selectedProviderIndex == null || _selectedDate == null || _selectedTime == null || _pickedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select provider, date, time and location')));
       return;
     }
 
     final p = providers[_selectedProviderIndex!];
+    final dateStr = _selectedDate!.toLocal().toString().split(' ')[0];
+    final timeStr = _selectedTime!.format(context);
+    
     final booking = {
       'service': widget.serviceTitle,
       'provider': p['name'],
-      'date': _selectedDate!.toLocal().toString().split(' ')[0],
+      'date': dateStr,
+      'time': timeStr,
       'lat': _pickedLocation!.latitude,
       'lng': _pickedLocation!.longitude,
       'address': _pickedAddress ?? '',
@@ -86,7 +103,7 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
 
     if (!mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booked ${widget.serviceTitle} with ${p['name']} on ${_selectedDate!.toLocal().toString().split(' ')[0]}')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booked ${widget.serviceTitle} with ${p['name']} on $dateStr at $timeStr')));
   }
 
   @override
@@ -141,6 +158,12 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
               children: [
                 Expanded(child: Text(_selectedDate == null ? 'No date selected' : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}')),
                 TextButton(onPressed: _pickDate, child: const Text('Pick Date')),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(child: Text(_selectedTime == null ? 'No time selected' : 'Time: ${_selectedTime!.format(context)}')),
+                TextButton(onPressed: _pickTime, child: const Text('Pick Time')),
               ],
             ),
             const SizedBox(height: 8),

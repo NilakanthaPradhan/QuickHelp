@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart';
+import 'screens/welcome_slider_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/services_page.dart';
@@ -38,9 +38,9 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
           ),
           themeMode: ThemeService.instance.themeMode,
-          initialRoute: '/',
+          // Start with the slider screen
+          home: const WelcomeSliderScreen(),
           routes: {
-            '/': (_) => const WelcomeScreen(),
             '/main': (_) => const MainScreen(),
             '/profile': (_) => const ProfileScreen(),
             '/services': (_) => const ServicesPage(),
