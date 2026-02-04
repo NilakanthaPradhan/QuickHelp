@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart' as lat;
 import 'map_picker.dart';
 import 'package:geocoding/geocoding.dart';
 import '../services/booking_store.dart';
+import '../services/api_service.dart';
 
 class ServiceBookingPage extends StatefulWidget {
   final String serviceTitle;
@@ -13,14 +14,25 @@ class ServiceBookingPage extends StatefulWidget {
 }
 
 class _ServiceBookingPageState extends State<ServiceBookingPage> {
-  final List<Map<String, dynamic>> providers = [
-    {'name': 'Asha', 'price': '₹300/hr', 'phone': '+91 90000 00001', 'image': 'https://i.pravatar.cc/150?img=1', 'rating': 4.5},
-    {'name': 'Sunita', 'price': '₹350/hr', 'phone': '+91 90000 00002', 'image': 'https://i.pravatar.cc/150?img=2', 'rating': 4.7},
-    {'name': 'Deepak', 'price': '₹250/hr', 'phone': '+91 90000 00003', 'image': 'https://i.pravatar.cc/150?img=3', 'rating': 4.1},
-    {'name': 'Rohit', 'price': '₹400/hr', 'phone': '+91 90000 00004', 'image': 'https://i.pravatar.cc/150?img=4', 'rating': 4.8},
-    {'name': 'Kavita', 'price': '₹320/hr', 'phone': '+91 90000 00005', 'image': 'https://i.pravatar.cc/150?img=5', 'rating': 4.3},
-    {'name': 'Manish', 'price': '₹280/hr', 'phone': '+91 90000 00006', 'image': 'https://i.pravatar.cc/150?img=6', 'rating': 4.0},
-  ];
+  List<dynamic> providers = [];
+  bool _isLoadingProviders = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProviders();
+  }
+
+  Future<void> _fetchProviders() async {
+    final fetched = await ApiService.getProviders(widget.serviceTitle);
+    if (mounted) {
+      setState(() {
+        providers = fetched;
+        _isLoadingProviders = false;
+        // Auto-select first if available? Or keep null.
+      });
+    }
+  }
 
   int? _selectedProviderIndex;
   DateTime? _selectedDate;
@@ -99,11 +111,17 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
       'address': _pickedAddress ?? '',
     };
 
-    await BookingStore.saveBooking(booking);
+    // await BookingStore.saveBooking(booking); // Deprecated local store
+    final success = await ApiService.createBooking(booking);
 
     if (!mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booked ${widget.serviceTitle} with ${p['name']} on $dateStr at $timeStr')));
+    
+    if (success) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booked ${widget.serviceTitle} with ${p['name']} successfully!')));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book. Server error.')));
+    }
   }
 
   @override
@@ -193,7 +211,11 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
             const SizedBox(height: 24),
             const Text('Select Provider', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 12),
-            ListView.separated(
+            _isLoadingProviders 
+                ? const Center(child: CircularProgressIndicator())
+                : providers.isEmpty 
+                    ? const Padding(padding: EdgeInsets.all(16), child: Text('No providers available for this service.'))
+                    : ListView.separated(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemCount: (_visibleProviders < providers.length) ? _visibleProviders + 1 : providers.length,
@@ -233,6 +255,23 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                                     Text((p['rating'] as double).toString(), style: const TextStyle(fontWeight: FontWeight.w600)),
                                     const SizedBox(width: 10),
                                     Text(p['price'] as String, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                                    const SizedBox(width: 8),
+                                    Text('• ${p['gender'] ?? 'Unknown'}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        '${(p['lat'] as double).toStringAsFixed(2)}, ${(p['lng'] as double).toStringAsFixed(2)}',
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                        maxLines: 1, 
+                                        overflow: TextOverflow.ellipsis
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../components/app_drawer.dart';
 import '../services/theme_service.dart';
+import '../services/theme_service.dart';
 import 'services_screen.dart';
+import 'home_dashboard_screen.dart';
+import 'rental_finder_screen.dart';
 import 'rental_finder_screen.dart';
 import 'chat_screen.dart';
 import 'profile_screen.dart';
@@ -20,7 +23,7 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   static final List<Widget> _pages = <Widget>[
-    const ServicesScreen(),
+    const HomeDashboardScreen(),
     const RentalFinderScreen(),
     const ChatScreen(),
   ];

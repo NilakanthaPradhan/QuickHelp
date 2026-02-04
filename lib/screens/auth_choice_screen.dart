@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'main_screen.dart';
+import 'admin_login_screen.dart';
 
 class AuthChoiceScreen extends StatelessWidget {
   const AuthChoiceScreen({super.key});
@@ -64,6 +65,13 @@ class AuthChoiceScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: const Text('Register as Partner', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdminLoginScreen()));
+                },
+                child: const Text('Join as Admin (Provider)', style: TextStyle(fontSize: 14, color: Colors.blueGrey)),
               ),
               const Spacer(),
             ],

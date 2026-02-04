@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../widgets/service_tile.dart';
+import '../services/api_service.dart';
 import 'service_booking_page.dart';
 
 class ServicesScreen extends StatefulWidget {
-  const ServicesScreen({super.key});
+  final bool showAppBar;
+  const ServicesScreen({super.key, this.showAppBar = false});
 
   @override
   State<ServicesScreen> createState() => _ServicesScreenState();
@@ -11,25 +13,26 @@ class ServicesScreen extends StatefulWidget {
 
 class _ServicesScreenState extends State<ServicesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  
-  static const List<Map<String, dynamic>> _allServices = [
-    {'title': 'Maid', 'icon': Icons.cleaning_services, 'color': Colors.pink},
-    {'title': 'Plumber', 'icon': Icons.plumbing, 'color': Colors.blue},
-    {'title': 'Painter', 'icon': Icons.format_paint, 'color': Colors.orange},
-    {'title': 'Electrician', 'icon': Icons.electrical_services, 'color': Colors.amber},
-    {'title': 'Carpenter', 'icon': Icons.handyman, 'color': Colors.brown},
-    {'title': 'Cleaner', 'icon': Icons.clean_hands, 'color': Colors.green},
-    {'title': 'Gardener', 'icon': Icons.grass, 'color': Colors.lightGreen},
-    {'title': 'Pest Control', 'icon': Icons.bug_report, 'color': Colors.red},
-  ];
-
-  List<Map<String, dynamic>> _filteredServices = [];
+  List<dynamic> _allServices = [];
+  List<dynamic> _filteredServices = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _filteredServices = List.from(_allServices);
+    _fetchServices();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _fetchServices() async {
+    final services = await ApiService.getServices();
+    if (mounted) {
+      setState(() {
+        _allServices = services;
+        _filteredServices = services;
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -41,12 +44,37 @@ class _ServicesScreenState extends State<ServicesScreen> {
   void _onSearchChanged() {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
-      _filteredServices = _allServices.where((s) => (s['title'] as String).toLowerCase().contains(query)).toList();
+      _filteredServices = _allServices.where((s) => (s['name'] as String).toLowerCase().contains(query)).toList();
     });
+  }
+
+  IconData _getIcon(String iconName) {
+    switch (iconName) {
+      case 'ac_unit': return Icons.ac_unit;
+      case 'cleaning_services': return Icons.cleaning_services; // Used for Cleaner and Maid
+      case 'plumbing': return Icons.plumbing; // Used for Plumber
+      case 'electrical_services': return Icons.electrical_services;
+      case 'format_paint': return Icons.format_paint;
+      case 'handyman': return Icons.handyman;
+      case 'clean_hands': return Icons.clean_hands;
+      case 'grass': return Icons.grass;
+      case 'bug_report': return Icons.bug_report;
+      default: return Icons.build;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.showAppBar) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('All Services')),
+        body: _buildContent(context),
+      );
+    }
+    return _buildContent(context);
+  }
+
+  Widget _buildContent(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom + 12;
     return SafeArea(
       bottom: true,
@@ -83,23 +111,25 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: _filteredServices.isEmpty
-                ? const Center(child: Text('No services found'))
-                : GridView.count(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, bottom),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.9,
-                    children: _filteredServices.map((s) {
-                      return ServiceTile(
-                        title: s['title'] as String,
-                        icon: s['icon'] as IconData,
-                        color: s['color'] as Color,
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServiceBookingPage(serviceTitle: s['title'] as String))),
-                      );
-                    }).toList(),
-                  ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredServices.isEmpty
+                    ? const Center(child: Text('No services found'))
+                    : GridView.count(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, bottom),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 0.9,
+                        children: _filteredServices.map((s) {
+                          return ServiceTile(
+                            title: s['name'] as String,
+                            icon: _getIcon(s['icon'] as String),
+                            color: Colors.blue, // Default color for now as DB doesn't have it
+                            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServiceBookingPage(serviceTitle: s['name'] as String))),
+                          );
+                        }).toList(),
+                      ),
           ),
         ],
       ),
