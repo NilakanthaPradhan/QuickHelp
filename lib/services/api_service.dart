@@ -5,9 +5,8 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:8080/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8080/api';
-    return 'http://localhost:8080/api';
+    // Always use live server for now
+    return 'https://quickhelp-48a5.onrender.com/api';
   }
 
   static Future<List<dynamic>> getServices() async {
