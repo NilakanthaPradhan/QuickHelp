@@ -12,7 +12,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final TextEditingController _msgController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -23,40 +23,65 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Detect background/foreground
     _fetchMessages();
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      _fetchMessages(refresh: true);
-    });
+    _startPolling();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _stopPolling();
     _msgController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _fetchMessages({bool refresh = false}) async {
-    final msgs = await ApiService.getChatHistory(widget.receiver.id);
-    if (mounted) {
-      // CRITICAL FIX: If msgs is null (network error), DO NOT clear existing messages.
-      if (msgs == null) {
-         if (!refresh && _loading) setState(() => _loading = false); 
-         return; 
-      }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _startPolling();
+      _fetchMessages(refresh: true); // Immediate fetch on return
+    } else if (state == AppLifecycleState.paused) {
+      _stopPolling();
+    }
+  }
 
-      if (!refresh || msgs.length != _messages.length) {
-         setState(() {
-          _messages = msgs;
-          _loading = false;
-        });
-        if (!refresh || _shouldAutoScroll()) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollToBottom();
+  void _startPolling() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchMessages(refresh: true);
+    });
+  }
+
+  void _stopPolling() {
+    _timer?.cancel();
+  }
+
+  void _fetchMessages({bool refresh = false}) async {
+    // Basic check to avoid overlapping requests if one takes too long
+    try {
+      final msgs = await ApiService.getChatHistory(widget.receiver.id);
+      if (mounted) {
+        if (msgs == null) {
+           if (!refresh && _loading) setState(() => _loading = false); 
+           return; 
+        }
+
+        if (!refresh || msgs.length != _messages.length) {
+           setState(() {
+            _messages = msgs;
+            _loading = false;
           });
+          if (!refresh || _shouldAutoScroll()) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
+          }
         }
       }
+    } catch (e) {
+      debugPrint("Error in chat poll: $e");
     }
   }
 
@@ -188,7 +213,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final msg = _messages[index];
-                      final isMe = msg['senderId'] == currentUser.id;
+                      // FORCE STRING COMPARISON to avoid int vs String mismatch
+                      final isMe = msg['senderId'].toString() == currentUser.id.toString();
                       final timestamp = _simpleTime(msg['timestamp']);
 
                       return Align(

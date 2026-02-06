@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart' as lat;
+import 'map_picker.dart';
 import '../services/api_service.dart';
 import '../widgets/aesthetic_widgets.dart';
 
@@ -99,6 +101,9 @@ class _JoinServicesScreenState extends State<JoinServicesScreen> {
         'location': _locationController.text,
         'phoneNumber': _phoneController.text,
       };
+      
+      if (_selectedLat != null) fields['lat'] = _selectedLat.toString();
+      if (_selectedLng != null) fields['lng'] = _selectedLng.toString();
 
       final success = await ApiService.submitProviderRequest(fields, _imageFile);
 
@@ -154,11 +159,32 @@ class _JoinServicesScreenState extends State<JoinServicesScreen> {
                 validator: (value) => value!.isEmpty ? 'Please enter description' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(labelText: 'Location / City', border: OutlineInputBorder()),
-                validator: (value) => value!.isEmpty ? 'Please enter location' : null,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                   Expanded(
+                    child: TextFormField(
+                      controller: _locationController,
+                      decoration: const InputDecoration(labelText: 'Location / City', border: OutlineInputBorder()),
+                      validator: (value) => value!.isEmpty ? 'Please enter location' : null,
+                    ),
+                   ),
+                   const SizedBox(width: 8),
+                   IconButton(
+                    onPressed: _pickLocationOnMap,
+                    icon: const Icon(Icons.map, color: Colors.deepPurple),
+                    tooltip: 'Pick on Map',
+                   )
+                ],
               ),
+              if (_selectedLat != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    '📍 Coordinates: ${_selectedLat!.toStringAsFixed(4)}, ${_selectedLng!.toStringAsFixed(4)}',
+                    style: TextStyle(color: Colors.green[700], fontSize: 12),
+                  ),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
@@ -205,5 +231,26 @@ class _JoinServicesScreenState extends State<JoinServicesScreen> {
         ),
       ),
     );
+  }
+
+  double? _selectedLat;
+  double? _selectedLng;
+
+  Future<void> _pickLocationOnMap() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MapPicker()),
+    );
+
+    if (result != null && result is lat.LatLng) {
+      setState(() {
+        _selectedLat = result.latitude;
+        _selectedLng = result.longitude;
+        // Optionally update text field if empty
+        if (_locationController.text.isEmpty) {
+          _locationController.text = '${result.latitude.toStringAsFixed(4)}, ${result.longitude.toStringAsFixed(4)}';
+        }
+      });
+    }
   }
 }

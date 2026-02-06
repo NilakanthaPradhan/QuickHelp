@@ -85,11 +85,10 @@ class _MapPickerState extends State<MapPicker> {
                     },
                   ),
                   children: [
-                    fm.TileLayer(
-                      urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      subdomains: const ['a', 'b', 'c'],
-                      userAgentPackageName: 'com.quickhelp.app',
-                    ),
+                      fm.TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.quickhelp.app',
+                      ),
                   ],
                 ),
                 Positioned(

@@ -56,9 +56,14 @@ class ApiService {
     return [];
   }
 
-  static Future<List<dynamic>> getProviders(String serviceType) async {
+  static Future<List<dynamic>> getProviders(String serviceType, {double? lat, double? lng, double? radius}) async {
     try {
-      final uri = Uri.parse('$baseUrl/providers').replace(queryParameters: {'serviceType': serviceType});
+      final params = {'serviceType': serviceType};
+      if (lat != null) params['lat'] = lat.toString();
+      if (lng != null) params['lng'] = lng.toString();
+      if (radius != null) params['radius'] = radius.toString();
+
+      final uri = Uri.parse('$baseUrl/providers').replace(queryParameters: params);
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);

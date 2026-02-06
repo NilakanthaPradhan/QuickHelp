@@ -18,15 +18,44 @@ class ServiceBookingPage extends StatefulWidget {
 class _ServiceBookingPageState extends State<ServiceBookingPage> {
   List<dynamic> providers = [];
   bool _isLoadingProviders = true;
+  double? _currentLat;
+  double? _currentLng;
+  double _searchRadius = 50.0; // Default 50km
 
   @override
   void initState() {
     super.initState();
-    _fetchProviders();
+    _initLocation();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        await Geolocator.requestPermission();
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _currentLat = pos.latitude;
+          _currentLng = pos.longitude;
+        });
+        _fetchProviders();
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      _fetchProviders(); // Fetch all if location fails
+    }
   }
 
   Future<void> _fetchProviders() async {
-    final fetched = await ApiService.getProviders(widget.serviceTitle);
+    setState(() => _isLoadingProviders = true);
+    final fetched = await ApiService.getProviders(
+      widget.serviceTitle, 
+      lat: _currentLat, 
+      lng: _currentLng, 
+      radius: _searchRadius
+    );
     if (mounted) {
       setState(() {
         providers = fetched;
@@ -232,6 +261,25 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
               ),
             ),
             const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Search Radius', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+                Text('${_searchRadius.round()} km', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+              ],
+            ),
+            Slider(
+              value: _searchRadius,
+              min: 5,
+              max: 500,
+              divisions: 20,
+              label: '${_searchRadius.round()} km',
+              onChanged: (val) {
+                setState(() => _searchRadius = val);
+              },
+              onChangeEnd: (val) => _fetchProviders(),
+            ),
+            const SizedBox(height: 12),
             const Text('Select Provider', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 12),
             _isLoadingProviders 
