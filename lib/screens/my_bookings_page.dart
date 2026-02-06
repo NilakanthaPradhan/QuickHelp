@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import '../services/booking_store.dart';
 
 class MyBookingsPage extends StatefulWidget {
@@ -15,7 +16,14 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ApiService.currentUser == null || ApiService.currentUser!.id == -1) {
+        // Show empty or redirect. For now, let's just show a message in body or redirect.
+        // Actually best to redirect or show placeholder.
+      } else {
+        _load();
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -35,11 +43,25 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('My Bookings')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _bookings.isEmpty
-              ? const Center(child: Text('No bookings yet'))
-              : ListView.separated(
+      body: (ApiService.currentUser == null || ApiService.currentUser!.id == -1)
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   const Text('Login to view bookings'),
+                   const SizedBox(height: 16),
+                   ElevatedButton(
+                     onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false),
+                     child: const Text('Login Now')
+                   )
+                ],
+              ),
+            )
+          : _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _bookings.isEmpty
+                  ? const Center(child: Text('No bookings yet'))
+                  : ListView.separated(
                   itemCount: _bookings.length,
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, i) {

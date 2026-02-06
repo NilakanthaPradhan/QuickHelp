@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:latlong2/latlong.dart' as lat;
 import 'map_picker.dart';
 import 'package:geocoding/geocoding.dart';
@@ -95,6 +96,27 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
     if (_selectedProviderIndex == null || _selectedDate == null || _selectedTime == null || _pickedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select provider, date, time and location')));
       return;
+    }
+
+    if (ApiService.currentUser == null || ApiService.currentUser!.id == -1) {
+       showDialog(
+         context: context, 
+         builder: (ctx) => AlertDialog(
+           title: const Text('Login Required'),
+           content: const Text('You need to be logged in to book a service.'),
+           actions: [
+             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+             ElevatedButton(
+               onPressed: () {
+                 Navigator.pop(ctx);
+                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+               }, 
+               child: const Text('Login')
+             )
+           ],
+         )
+       );
+       return;
     }
 
     final p = providers[_selectedProviderIndex!];
@@ -240,21 +262,31 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(radius: 28, backgroundImage: NetworkImage(p['image'] as String)),
+                          CircleAvatar(
+                            radius: 28, 
+                            backgroundImage: (p['photoData'] != null && (p['photoData'] as String).isNotEmpty)
+                                ? MemoryImage(base64Decode(p['photoData'] as String))
+                                : (p['image'] != null && (p['image'] as String).isNotEmpty
+                                    ? NetworkImage(p['image'] as String)
+                                    : null) as ImageProvider?,
+                            child: (p['photoData'] == null && p['image'] == null) 
+                                ? const Icon(Icons.person) 
+                                : null,
+                          ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(p['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text(p['name']?.toString() ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
                                     Icon(Icons.star, size: 16, color: Colors.amber[700]),
                                     const SizedBox(width: 4),
-                                    Text((p['rating'] as double).toString(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    Text((p['rating'] ?? 0.0).toString(), style: const TextStyle(fontWeight: FontWeight.w600)),
                                     const SizedBox(width: 10),
-                                    Text(p['price'] as String, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+                                    Text(p['price']?.toString() ?? '', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
                                     const SizedBox(width: 8),
                                     Text('• ${p['gender'] ?? 'Unknown'}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                                   ],
@@ -266,7 +298,7 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        '${(p['lat'] as double).toStringAsFixed(2)}, ${(p['lng'] as double).toStringAsFixed(2)}',
+                                        '${(p['lat'] ?? 0.0).toStringAsFixed(2)}, ${(p['lng'] ?? 0.0).toStringAsFixed(2)}',
                                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
                                         maxLines: 1, 
                                         overflow: TextOverflow.ellipsis

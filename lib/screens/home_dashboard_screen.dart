@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import 'services_screen.dart';
 import 'service_booking_page.dart';
 import '../widgets/service_tile.dart';
+import '../widgets/app_drawer.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -56,7 +57,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner or Greeting could go here
+          // Banner or Greeting
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -64,12 +65,32 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               gradient: LinearGradient(colors: [Colors.deepPurple, Colors.deepPurple.shade300]),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Welcome Home!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text('What do you need help with today?', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                Text(
+                  'Welcome, ${ApiService.currentUser?.fullName ?? (ApiService.currentUser?.username ?? 'Guest')}!', 
+                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
+                ),
+                const SizedBox(height: 8),
+                if (ApiService.currentUser?.id == -1) // Guest
+                 GestureDetector(
+                   onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false), // Go to login
+                   child: Container(
+                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                     decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(20)),
+                     child: const Row(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         Text('Join Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                         SizedBox(width: 4),
+                         Icon(Icons.arrow_forward, color: Colors.white, size: 16)
+                       ],
+                     ),
+                   ),
+                 )
+                else
+                 const Text('What do you need help with today?', style: TextStyle(color: Colors.white70, fontSize: 16)),
               ],
             ),
           ),
@@ -105,6 +126,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       title: s['name'] as String,
                       icon: _getIcon(s['icon'] as String),
                       color: Colors.blue, 
+                      providerCount: (s['providerCount'] ?? 0) as int,
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServiceBookingPage(serviceTitle: s['name'] as String))),
                     );
                   }).toList(),
