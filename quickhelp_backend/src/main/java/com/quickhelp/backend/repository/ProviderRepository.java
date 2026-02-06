@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface ProviderRepository extends JpaRepository<Provider, Long> {
     List<Provider> findByServiceTypeIgnoreCase(String serviceType);
+    long countByServiceTypeIgnoreCase(String serviceType);
 }
