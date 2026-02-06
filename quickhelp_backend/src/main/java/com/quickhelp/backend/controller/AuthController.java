@@ -60,8 +60,13 @@ public class AuthController {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (user.getPassword().equals(password)) {
+                System.out.println("✅ Login Success for: " + username);
                 return ResponseEntity.ok(user);
+            } else {
+                System.out.println("❌ Login Failed: Password mismatch for " + username);
             }
+        } else {
+            System.out.println("❌ Login Failed: User not found: " + username);
         }
         return ResponseEntity.status(401).body("Invalid Credentials");
     }
