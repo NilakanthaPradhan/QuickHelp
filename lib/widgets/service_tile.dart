@@ -5,7 +5,8 @@ class ServiceTile extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const ServiceTile({super.key, required this.title, required this.icon, required this.color, required this.onTap});
+  final int providerCount;
+  const ServiceTile({super.key, required this.title, required this.icon, required this.color, required this.onTap, this.providerCount = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +53,35 @@ class ServiceTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: providerCount > 0 ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.people, size: 10, color: providerCount > 0 ? Colors.green : Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$providerCount Available',
+                        style: TextStyle(
+                          color: providerCount > 0 ? Colors.green : Colors.grey,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   'Book Now',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.grey,
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
                 ),
               ],

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../screens/profile_screen.dart';
 import '../services/theme_service.dart';
-
-
+import '../screens/join_services_screen.dart';
+import '../screens/admin_requests_screen.dart';
+import '../screens/admin_login_screen.dart';
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -121,6 +122,24 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).pushNamed('/chat');
+            },
+          ),
+          const Divider(),
+          // New options
+          ListTile(
+            leading: const Icon(Icons.work_outline),
+            title: const Text('Join as Provider'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const JoinServicesScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.admin_panel_settings),
+            title: const Text('Admin Panel'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdminLoginScreen()));
             },
           ),
           const Divider(),

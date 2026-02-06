@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'admin_add_provider_screen.dart';
+import '../services/api_service.dart';
+import 'admin_requests_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -11,16 +12,29 @@ class AdminLoginScreen extends StatefulWidget {
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
-  void _login() {
-    if (_usernameController.text == 'chintu' && _passwordController.text == 'chintu') {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AdminAddProviderScreen()),
-      );
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+    final success = await ApiService.adminLogin(
+      _usernameController.text,
+      _passwordController.text,
+    );
+    setState(() => _isLoading = false);
+
+    if (success) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminRequestsScreen()),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid credentials')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid Credentials')),
+        );
+      }
     }
   }
 
@@ -33,8 +47,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.admin_panel_settings, size: 64, color: Colors.blue),
-            const SizedBox(height: 32),
             TextField(
               controller: _usernameController,
               decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()),
@@ -48,10 +60,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _login,
-                child: const Text('Login'),
+              child: FilledButton(
+                onPressed: _isLoading ? null : _login,
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Login'),
               ),
             ),
           ],

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_slider_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/services_page.dart';
 import 'screens/rentals_page.dart';
 import 'screens/my_bookings_page.dart';
+import 'screens/admin/admin_user_list_screen.dart';
 
 import 'services/theme_service.dart';
 import 'screens/chat_screen.dart';
@@ -39,8 +40,10 @@ class MyApp extends StatelessWidget {
           ),
           themeMode: ThemeService.instance.themeMode,
           // Start with the slider screen
-          home: const WelcomeSliderScreen(),
+          // Start with the slider screen
+          home: const LoginScreen(),
           routes: {
+            // '/welcome': (_) => const WelcomeSliderScreen(), // Optional if we want to keep it
             '/main': (_) => const MainScreen(),
             '/profile': (_) => const ProfileScreen(),
             '/services': (_) => const ServicesPage(),
@@ -48,6 +51,7 @@ class MyApp extends StatelessWidget {
             '/bookings': (_) => const MyBookingsPage(),
             '/chat': (_) => const ChatScreen(),
             '/settings': (_) => const SettingsPage(),
+            '/admin/users': (_) => const AdminUserListScreen(),
           },
         );
       },

@@ -126,6 +126,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             title: s['name'] as String,
                             icon: _getIcon(s['icon'] as String),
                             color: Colors.blue, // Default color for now as DB doesn't have it
+                            providerCount: (s['providerCount'] ?? 0) as int,
                             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServiceBookingPage(serviceTitle: s['name'] as String))),
                           );
                         }).toList(),
