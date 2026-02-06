@@ -71,7 +71,23 @@ public class ApiController {
     }
 
     @GetMapping("/providers")
-    public List<Provider> getProviders(@RequestParam(name = "serviceType", required = false) String serviceType) {
+    public List<Provider> getProviders(
+            @RequestParam(name = "serviceType", required = false) String serviceType,
+            @RequestParam(name = "lat", required = false) Double lat,
+            @RequestParam(name = "lng", required = false) Double lng,
+            @RequestParam(name = "radius", defaultValue = "50") Double radius) { // Default 50km
+        
+        if (lat != null && lng != null) {
+             List<Provider> nearby = providerRepository.findNearbyProviders(lat, lng, radius);
+             // Verify this logic: if serviceType is also present, we should filter the nearby list
+             if (serviceType != null && !serviceType.isEmpty()) {
+                 return nearby.stream()
+                         .filter(p -> p.getServiceType().equalsIgnoreCase(serviceType))
+                         .collect(java.util.stream.Collectors.toList());
+             }
+             return nearby;
+        }
+
         if (serviceType != null && !serviceType.isEmpty()) {
             return providerRepository.findByServiceTypeIgnoreCase(serviceType);
         }
@@ -89,6 +105,8 @@ public class ApiController {
             @RequestParam("serviceType") String serviceType,
             @RequestParam("description") String description,
             @RequestParam("location") String location,
+            @RequestParam(name = "lat", required = false) Double lat,
+            @RequestParam(name = "lng", required = false) Double lng,
             @RequestParam("phoneNumber") String phoneNumber,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         try {
@@ -97,6 +115,8 @@ public class ApiController {
             request.setServiceType(serviceType);
             request.setDescription(description);
             request.setLocation(location);
+            if (lat != null) request.setLat(lat);
+            if (lng != null) request.setLng(lng);
             request.setPhoneNumber(phoneNumber);
             if (file != null && !file.isEmpty()) {
                 request.setPhotoData(file.getBytes());
@@ -128,10 +148,14 @@ public class ApiController {
                 provider.setRating(0.0); // New provider default rating
                 provider.setPrice("₹200/hr"); // Default price or ask user?
                 
-                // Assuming location is just a string in request, but Provider needs lat/lng. 
-                // For now, we'll default to some value or 0.0, 0.0
-                provider.setLat(12.9716); // Default to Bangalore center for now
-                provider.setLng(77.5946);
+                // Transfer location data
+                if (request.getLat() != null && request.getLng() != null) {
+                    provider.setLat(request.getLat());
+                    provider.setLng(request.getLng());
+                } else {
+                    provider.setLat(12.9716); // Default to Bangalore center
+                    provider.setLng(77.5946);
+                }
                 
                 providerRepository.save(provider);
                 
