@@ -7,8 +7,14 @@ import '../models/user_model.dart';
 
 class ApiService {
   static String get baseUrl {
-    // LAN IP for physical device connection
-    return 'http://172.23.72.126:8080/api';
+    // Production URL (Render deployment)
+    const production = 'https://quickhelp-48a5.onrender.com/api';
+    
+    // Local development URL (uncomment for local testing)
+    // const local = 'http://172.23.72.126:8080/api';
+    
+    // Use production by default
+    return production;
   }
 
   static Future<List<dynamic>> getServices() async {
