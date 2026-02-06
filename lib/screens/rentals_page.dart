@@ -426,7 +426,7 @@ class _RentalsPageState extends State<RentalsPage> {
                       
                       // Horizontal Highlight List
                       SizedBox(
-                        height: 280,
+                        height: 300,
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           scrollDirection: Axis.horizontal,
