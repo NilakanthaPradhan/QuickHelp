@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:latlong2/latlong.dart' as lat;
 import 'map_picker.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/booking_store.dart';
 import '../services/api_service.dart';
 import '../widgets/aesthetic_widgets.dart';
