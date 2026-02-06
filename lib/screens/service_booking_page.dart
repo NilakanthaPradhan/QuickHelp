@@ -5,6 +5,7 @@ import 'map_picker.dart';
 import 'package:geocoding/geocoding.dart';
 import '../services/booking_store.dart';
 import '../services/api_service.dart';
+import '../widgets/aesthetic_widgets.dart';
 
 class ServiceBookingPage extends StatefulWidget {
   final String serviceTitle;
@@ -124,8 +125,8 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
     final timeStr = _selectedTime!.format(context);
     
     final booking = {
-      'service': widget.serviceTitle,
-      'provider': p['name'],
+      'serviceName': widget.serviceTitle,
+      'providerName': p['name'], // Fixed key to match backend
       'date': dateStr,
       'time': timeStr,
       'lat': _pickedLocation!.latitude,
@@ -140,9 +141,9 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
     
     if (success) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booked ${widget.serviceTitle} with ${p['name']} successfully!')));
+      showAestheticSnackbar(context, 'Booked ${widget.serviceTitle} successfully! 🚀');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book. Server error.')));
+      showAestheticSnackbar(context, 'Failed to book. Server error.', isError: true);
     }
   }
 

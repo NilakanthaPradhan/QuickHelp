@@ -7,6 +7,7 @@ import 'service_booking_page.dart';
 import 'package:latlong2/latlong.dart' as lat;
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:geocoding/geocoding.dart';
+import '../widgets/aesthetic_widgets.dart';
 
 class RentalsPage extends StatefulWidget {
   const RentalsPage({super.key});
@@ -237,8 +238,10 @@ class _RentalsPageState extends State<RentalsPage> {
                       width: 140,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact initiated')));
+                          showAestheticSnackbar(context, 'Contact initiated successfully! 📞');
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (context.mounted) Navigator.of(context).pop();
+                          });
                         },
                         icon: const Icon(Icons.call),
                         label: const Text('Contact'),
@@ -258,190 +261,257 @@ class _RentalsPageState extends State<RentalsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rentals')),
-      body: Column(
+      extendBodyBehindAppBar: true, 
+      appBar: AppBar(
+        title: const Text('Find Your Home 🏠', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        backgroundColor: Colors.white.withOpacity(0.8),
+        elevation: 0,
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.0)],
+            ),
+          ),
+        ),
+      ),
+      body: Stack(
         children: [
-          Container(
-            height: 260,
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.grey[200]),
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: fm.FlutterMap(
-                    mapController: _mapController,
-                    options: fm.MapOptions(
-                      initialCenter: lat.LatLng(_dummyRentals.first['lat'] as double, _dummyRentals.first['lng'] as double),
-                      initialZoom: 13.0,
-                    ),
-                    children: [
-                      fm.TileLayer(
-                        urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        subdomains: const ['a', 'b', 'c'],
-                        userAgentPackageName: 'com.quickhelp.app',
+          // Background Map (Full Screen effect behind content, or top half)
+          Positioned.fill(
+             child: Column(
+               children: [
+                 Expanded(
+                   flex: 5,
+                   child: fm.FlutterMap(
+                      mapController: _mapController,
+                      options: fm.MapOptions(
+                        initialCenter: lat.LatLng(_dummyRentals.first['lat'] as double, _dummyRentals.first['lng'] as double),
+                        initialZoom: 14.0,
                       ),
-                      MarkerClusterLayerWidget(
-                        options: MarkerClusterLayerOptions(
-                          maxClusterRadius: 50,
-                          size: const Size(42, 42),
-                          markers: [
-                            ..._rentalMarkers(),
-                            if (_currentPosition != null)
-                              fm.Marker(
-                                point: lat.LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                width: 80,
-                                height: 80,
-                                child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
-                              ),
-                          ],
-                          builder: (context, markers) {
-                            return Container(
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
-                              child: Text('${markers.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            );
-                          },
+                      children: [
+                        fm.TileLayer(
+                          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          subdomains: const ['a', 'b', 'c'],
                         ),
-                      ),
+                        MarkerClusterLayerWidget(
+                          options: MarkerClusterLayerOptions(
+                            maxClusterRadius: 50,
+                            size: const Size(42, 42),
+                            markers: [
+                              ..._rentalMarkers(),
+                              if (_currentPosition != null)
+                                fm.Marker(
+                                  point: lat.LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                  width: 60,
+                                  height: 60,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.blue, width: 2),
+                                    ),
+                                    child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
+                                  ),
+                                ),
+                            ],
+                            builder: (context, markers) {
+                              return Container(
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
+                                child: Text('${markers.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                 ),
+                 Expanded(flex: 4, child: Container(color: Colors.white)), // Placeholder for list
+               ],
+             ),
+          ),
+          
+          // Floating Search Bar
+          Positioned(
+            top: 110,
+            left: 20,
+            right: 20,
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))
                     ],
                   ),
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  right: 12,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search "Bangalore"...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.deepPurple),
+                      suffixIcon: _isSearching
+                          ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
+                          : IconButton(
+                              icon: const Icon(Icons.my_location, color: Colors.blue),
+                              onPressed: _getLocation,
+                            ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search area...',
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        suffixIcon: IconButton(
-                          icon: _isSearching
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.search),
-                          onPressed: _searchLocation,
-                        ),
-                      ),
-                      onChanged: _onSearchChanged,
-                      onSubmitted: (_) => _searchLocation(),
-                    ),
+                    onChanged: _onSearchChanged,
+                    onSubmitted: (_) => _searchLocation(),
                   ),
                 ),
                 if (_suggestions.isNotEmpty)
-                  Positioned(
-                    top: 70,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: _suggestions.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          final loc = _suggestions[i];
-                          return ListTile(
-                            dense: true,
-                            leading: const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                            title: Text('${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}'),
-                            subtitle: const Text('Tap to move map'),
-                            onTap: () => _selectLocation(loc),
-                          );
-                        },
-                      ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
                     ),
-                  ),
-                if (_loadingLocation)
-                  const Positioned(
-                    bottom: 12,
-                    right: 12,
-                    child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: _suggestions.length > 5 ? 5 : _suggestions.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, i) {
+                        final loc = _suggestions[i];
+                        return ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.location_on_outlined, size: 18, color: Colors.grey),
+                          title: Text('${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}'),
+                          onTap: () => _selectLocation(loc),
+                        );
+                      },
+                    ),
                   ),
               ],
             ),
           ),
-          // horizontal cards for quick browsing
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 128,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              scrollDirection: Axis.horizontal,
-              itemCount: _dummyRentals.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, i) {
-                final r = _dummyRentals[i];
-                return GestureDetector(
-                  onTap: () {
-                    final target = lat.LatLng(r['lat'] as double, r['lng'] as double);
-                    try {
-                      _mapController.move(target, 15.0);
-                    } catch (_) {}
-                    _openRentalDetails(r);
-                  },
-                  child: Container(
-                    width: 280,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.network(
-                            r['images'][0] as String,
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) => Container(width: 100, height: 100, color: Colors.grey[100], child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))),
-                          ),
+
+          // Draggable Bottom Sheet for Rentals
+          DraggableScrollableSheet(
+            initialChildSize: 0.45,
+            minChildSize: 0.40,
+            maxChildSize: 0.9,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
+                ),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: SizedBox(width: 40, height: 5, child: DecoratedBox(decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.all(Radius.circular(10))))),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(r['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 2, overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 8),
-                              Text('${r['price']}', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.w700, fontSize: 16)),
-                              const SizedBox(height: 6),
-                              Row(children: [
-                                const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
-                                const SizedBox(width: 4),
-                                Text(((r['rating'] as num?)?.toDouble() ?? 4.0).toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold)),
-                              ]),
-                            ],
-                          ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        child: Text('Nearby Places', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      ),
+                      
+                      // Horizontal Highlight List
+                      SizedBox(
+                        height: 280,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _dummyRentals.length,
+                          itemBuilder: (context, i) {
+                            final r = _dummyRentals[i];
+                            return Container(
+                              width: 260,
+                              margin: const EdgeInsets.only(right: 16, bottom: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+                                ],
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                   final target = lat.LatLng(r['lat'] as double, r['lng'] as double);
+                                    try {
+                                      _mapController.move(target, 15.0);
+                                    } catch (_) {}
+                                    _openRentalDetails(r);
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                      child: Image.network(
+                                        r['images'][0],
+                                        height: 150,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (ctx, _, __) => Container(height: 150, color: Colors.grey[200]),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(r['price'], style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 18)),
+                                              Row(children: [
+                                                const Icon(Icons.star, color: Colors.amber, size: 16),
+                                                Text(' ${r['rating']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                              ]),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(r['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                          const SizedBox(height: 4),
+                                          const Row(
+                                            children: [
+                                              Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                                              Text(' 2.5 km away', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                      
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        child: Text('All Listings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ),
+                      const RentalFinderScreen(), // Embed the grid/list finder here
+                      const SizedBox(height: 80),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-          const SizedBox(height: 8),
-          const Expanded(child: RentalFinderScreen()),
         ],
       ),
     );

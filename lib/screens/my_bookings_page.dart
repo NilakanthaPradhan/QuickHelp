@@ -27,7 +27,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   }
 
   Future<void> _load() async {
-    final b = await BookingStore.getBookings();
+    final bRaw = await ApiService.getBookings();
+    final List<Map<String, dynamic>> b = List<Map<String, dynamic>>.from(bRaw);
     setState(() {
       _bookings = b;
       _loading = false;
@@ -35,8 +36,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   }
 
   Future<void> _removeAt(int i) async {
-    await BookingStore.removeBookingAt(i);
-    await _load();
+    // Backend delete not implemented yet
+    // await BookingStore.removeBookingAt(i);
+    // await _load();
   }
 
   @override
@@ -57,22 +59,59 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                 ],
               ),
             )
-          : _loading
+              : _loading
               ? const Center(child: CircularProgressIndicator())
               : _bookings.isEmpty
-                  ? const Center(child: Text('No bookings yet'))
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_today, size: 60, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          const Text('No bookings found', style: TextStyle(color: Colors.grey, fontSize: 18)),
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(context, '/rentals'), 
+                            icon: const Icon(Icons.search),
+                            label: const Text('Find Services')
+                          )
+                        ],
+                      ),
+                    )
                   : ListView.separated(
                   itemCount: _bookings.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, i) {
                     final b = _bookings[i];
-                    return ListTile(
-                      title: Text('${b['service']} with ${b['provider']}'),
-                      subtitle: Text('${b['date']}\n${b['address'] ?? '${b['lat']}, ${b['lng']}'}'),
-                      isThreeLine: true,
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _removeAt(i),
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                          child: Icon(Icons.confirmation_number, color: Theme.of(context).primaryColor),
+                        ),
+                        title: Text('${b['serviceName'] ?? b['service'] ?? 'Service'} with ${b['providerName'] ?? b['provider'] ?? 'Provider'}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Row(children: [
+                              const Icon(Icons.calendar_month, size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text('${b['date']} at ${b['time']}'),
+                            ]),
+                            const SizedBox(height: 2),
+                            Row(children: [
+                              const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Expanded(child: Text(b['address'] ?? 'Location not set', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            ]),
+                          ],
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                     );
                   },

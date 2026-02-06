@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/aesthetic_widgets.dart';
 
 class AdminRequestsScreen extends StatefulWidget {
   const AdminRequestsScreen({super.key});
@@ -32,16 +33,12 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     final success = await ApiService.approveRequest(id);
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request Approved')),
-        );
+        showAestheticSnackbar(context, 'Request Approved ✅');
       }
       _fetchRequests();
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to approve')),
-        );
+        showAestheticSnackbar(context, 'Failed to approve ❌', isError: true);
       }
     }
   }
@@ -50,16 +47,12 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     final success = await ApiService.rejectRequest(id);
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request Rejected')),
-        );
+        showAestheticSnackbar(context, 'Request Rejected 🚫');
       }
       _fetchRequests();
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to reject')),
-        );
+        showAestheticSnackbar(context, 'Failed to reject ❌', isError: true);
       }
     }
   }

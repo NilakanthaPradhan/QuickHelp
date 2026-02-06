@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import '../widgets/aesthetic_widgets.dart';
 
 class JoinServicesScreen extends StatefulWidget {
   const JoinServicesScreen({super.key});
@@ -106,12 +107,10 @@ class _JoinServicesScreenState extends State<JoinServicesScreen> {
       });
 
       if (success) {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request submitted successfully! Admin will review it.')),
-        );
-        // ignore: use_build_context_synchronously
-        Navigator.pop(context);
+        if (!mounted) return;
+        showAestheticSnackbar(context, 'Request submitted successfully! Admin will review it.');
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) Navigator.pop(context);
       } else {
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(

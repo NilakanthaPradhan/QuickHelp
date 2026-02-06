@@ -1,140 +1,280 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../services/theme_service.dart';
+import 'package:intl/intl.dart'; // Add this for formatting
+import '../models/user_model.dart';
+import '../services/api_service.dart';
 
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
-
-  final List<Map<String, dynamic>> _contacts = const [
-    {'name': 'Support Team', 'role': 'Help & Support', 'image': 'https://i.pravatar.cc/150?u=support'},
-    {'name': 'Ramesh Kumar', 'role': 'Plumber', 'image': 'https://i.pravatar.cc/150?u=ramesh'},
-    {'name': 'Sunita Devi', 'role': 'Maid Services', 'image': 'https://i.pravatar.cc/150?u=sunita'},
-    {'name': 'House Owner', 'role': 'Property Manager', 'image': 'https://i.pravatar.cc/150?u=owner'},
-  ];
+class ChatScreen extends StatefulWidget {
+  final User receiver;
+  const ChatScreen({super.key, required this.receiver});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
-      body: ListView.separated(
-        itemCount: _contacts.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, i) {
-          final c = _contacts[i];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: NetworkImage(c['image'] as String),
-              onBackgroundImageError: (_, __) => const Icon(Icons.person),
-            ),
-            title: Text(c['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(c['role'] as String),
-            trailing: const Text('12:30 PM', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatDetailScreen(contact: c))),
-          );
-        },
-      ),
-    );
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _msgController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  List<dynamic> _messages = [];
+  Timer? _timer;
+  bool _loading = true;
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMessages();
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _fetchMessages(refresh: true);
+    });
   }
-}
-
-class ChatDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> contact;
-  const ChatDetailScreen({super.key, required this.contact});
 
   @override
-  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
-}
+  void dispose() {
+    _timer?.cancel();
+    _msgController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-class _ChatDetailScreenState extends State<ChatDetailScreen> {
-  final TextEditingController _controller = TextEditingController();
-  final List<String> _messages = [];
+  void _fetchMessages({bool refresh = false}) async {
+    final msgs = await ApiService.getChatHistory(widget.receiver.id);
+    if (mounted) {
+      // CRITICAL FIX: If msgs is null (network error), DO NOT clear existing messages.
+      if (msgs == null) {
+         if (!refresh && _loading) setState(() => _loading = false); 
+         return; 
+      }
+
+      if (!refresh || msgs.length != _messages.length) {
+         setState(() {
+          _messages = msgs;
+          _loading = false;
+        });
+        if (!refresh || _shouldAutoScroll()) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToBottom();
+          });
+        }
+      }
+    }
+  }
+
+  bool _shouldAutoScroll() {
+    if (!_scrollController.hasClients) return true;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    return (maxScroll - currentScroll) < 200; 
+  }
+  
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent + 100,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _send() async {
+    final text = _msgController.text.trim();
+    if (text.isEmpty) return;
+
+    final currentUser = ApiService.currentUser;
+    if (currentUser == null) return;
+
+    // OPTIMISTIC UPDATE: Show message immediately
+    final tempMsg = {
+      'senderId': currentUser.id,
+      'receiverId': widget.receiver.id,
+      'content': text,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    setState(() {
+      _messages.add(tempMsg);
+      _msgController.clear();
+    });
+    _scrollToBottom();
+    
+    // Send to backend
+    // Send to backend
+    final result = await ApiService.sendMessage(widget.receiver.id, text);
+    
+    if (mounted) {
+      if (result != null) {
+        // If failed, remove the temp message and show error
+        setState(() {
+           _messages.remove(tempMsg);
+           _msgController.text = text; // Restore text
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Send Failed: $result'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      } else {
+        // Success: Refresh to get the real message ID/timestamp from server
+        _fetchMessages(refresh: true);
+      }
+    }
+  }
+
+  String _formatTimestamp(String? isoString) {
+    if (isoString == null) return '';
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      return DateFormat('h:mm a').format(dt); // Requires intl package, or manual
+    } catch (e) {
+      return '';
+    }
+  }
+  
+  // Manual formatter if intl not available
+  String _simpleTime(String? isoString) {
+     if (isoString == null) return '';
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      String hour = dt.hour > 12 ? '${dt.hour - 12}' : '${dt.hour == 0 ? 12 : dt.hour}';
+      String minute = dt.minute.toString().padLeft(2, '0');
+      String period = dt.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $period';
+    } catch (e) {
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // simple dummy initial messages for context
-    if (_messages.isEmpty) {
-      _messages.add('Hello! How can I help you today?');
-    }
+    return ValueListenableBuilder<User?>(
+      valueListenable: ApiService.userNotifier,
+      builder: (context, currentUser, child) {
+        if (currentUser == null) {
+          return const Scaffold(body: Center(child: Text('Please log in to chat')));
+        }
+        
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.grey[200],
+                  child: const Icon(Icons.person, color: Colors.grey),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.receiver.fullName, style: const TextStyle(fontSize: 16)),
+                    Text('@${widget.receiver.username}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          body: Column(
+            children: [
+              Expanded(
+                child: _loading 
+                ? const Center(child: CircularProgressIndicator()) 
+                : _messages.isEmpty 
+                  ? Center(child: Text('Say hi to ${widget.receiver.fullName}! 👋', style: const TextStyle(color: Colors.grey)))
+                  : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      final isMe = msg['senderId'] == currentUser.id;
+                      final timestamp = _simpleTime(msg['timestamp']);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(widget.contact['image'] as String),
-              radius: 16,
-            ),
-            const SizedBox(width: 10),
-            Text(widget.contact['name'] as String, style: const TextStyle(fontSize: 16)),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, i) {
-                final isMe = i % 2 != 0; // dummy logic: odd messages are 'me'
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isMe ? ThemeService.instance.seedColor : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20).copyWith(
-                        bottomRight: isMe ? Radius.zero : const Radius.circular(20),
-                        bottomLeft: isMe ? const Radius.circular(20) : Radius.zero,
-                      ),
-                    ),
-                    child: Text(
-                      _messages[i],
-                      style: TextStyle(color: isMe ? Colors.white : Colors.black87),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, -2))]),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  FloatingActionButton(
-                    mini: true,
-                    elevation: 0,
-                    onPressed: () {
-                      if (_controller.text.trim().isNotEmpty) {
-                        setState(() {
-                          _messages.add(_controller.text.trim());
-                          _controller.clear();
-                        });
-                      }
+                      return Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isMe ? Theme.of(context).primaryColor : Colors.grey[200],
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(16),
+                              topRight: const Radius.circular(16),
+                              bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+                              bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                            ),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                            ]
+                          ),
+                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                msg['content'] ?? '',
+                                style: TextStyle(
+                                  color: isMe ? Colors.white : Colors.black87,
+                                  fontSize: 16
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                timestamp, 
+                                style: TextStyle(
+                                  color: isMe ? Colors.white70 : Colors.black45,
+                                  fontSize: 10
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     },
-                    child: const Icon(Icons.send),
                   ),
-                ],
               ),
-            ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _msgController,
+                          decoration: InputDecoration(
+                            hintText: 'Type a message...',
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onSubmitted: (_) => _send(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        child: IconButton(
+                          icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                          onPressed: _send,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -2,20 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 
+import '../config.dart';
+
 class ApiService {
-  static String get baseUrl {
-    // Production URL (Render deployment)
-    const production = 'https://quickhelp-48a5.onrender.com/api';
-    
-    // Local development URL (uncomment for local testing)
-    // const local = 'http://172.23.72.126:8080/api';
-    
-    // Use production by default
-    return production;
-  }
+  static String get baseUrl => Config.baseUrl;
 
   static Future<List<dynamic>> getServices() async {
     try {
@@ -169,9 +163,38 @@ class ApiService {
     }
   }
 
-  // --- User Auth ---
+  // --- User Auth & Persistence ---
   
   static User? currentUser;
+  static final ValueNotifier<User?> userNotifier = ValueNotifier<User?>(null);
+
+  static Future<void> loadUserFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? userData = prefs.getString('user_data');
+      if (userData != null) {
+        currentUser = User.fromJson(jsonDecode(userData));
+        userNotifier.value = currentUser; // Notify listeners
+        debugPrint('✅ Restored user session: ${currentUser?.username}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading user from prefs: $e');
+    }
+  }
+
+  static Future<void> saveUserToPrefs(User user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_data', jsonEncode(user.toJson())); 
+    } catch (e) {
+      debugPrint('❌ Error saving user to prefs: $e');
+    }
+  }
+
+  static Future<void> clearUserPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_data');
+  }
 
   static Future<User?> login(String username, String password) async {
     try {
@@ -186,6 +209,8 @@ class ApiService {
         final jsonData = jsonDecode(response.body);
         debugPrint('👤 Login response data: $jsonData');
         currentUser = User.fromJson(jsonData);
+        userNotifier.value = currentUser; // Notify listeners
+        await saveUserToPrefs(currentUser!); 
         debugPrint('✅ Login successful! Set currentUser - Username: ${currentUser?.username}, FullName: ${currentUser?.fullName}, Role: ${currentUser?.role}');
         return currentUser;
       } else {
@@ -195,6 +220,12 @@ class ApiService {
       debugPrint('❌ Login error: $e');
     }
     return null;
+  }
+  
+  static Future<void> logout() async {
+    currentUser = null;
+    userNotifier.value = null; // Notify listeners
+    await clearUserPrefs();
   }
   static Future<bool> register(Map<String, String> data, var imageFile) async {
     try {
@@ -263,11 +294,93 @@ class ApiService {
       
       if (response.statusCode == 200) {
         currentUser = User.fromJson(jsonDecode(response.body));
+        userNotifier.value = currentUser; // Notify listeners
+        await saveUserToPrefs(currentUser!); // Persist updated profile
         return true;
       }
     } catch (e) {
       debugPrint('Update profile error: $e');
     }
     return false;
+  }
+
+  static Future<List<User>> searchUsers(String query) async {
+    try {
+      final url = '$baseUrl/api/users/search?query=$query'; // Check if baseUrl already has /api
+      // Wait, Config.baseUrl already includes /api? 
+      // Config.localUrl = 'http://172.23.72.126:8080/api';
+      // So '$baseUrl/users/search' -> '.../api/users/search'. 
+      // Let's verify standard usage.
+      final uri = Uri.parse('$baseUrl/users/search?query=$query');
+      debugPrint('🔍 Search Request: $uri');
+      
+      final response = await http.get(uri);
+      debugPrint('🔍 Search Response Code: ${response.statusCode}');
+      debugPrint('🔍 Search Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list.map((e) => User.fromJson(e)).toList();
+      }
+    } catch (e) {
+      debugPrint('❌ Error searching users: $e');
+      rethrow; // Re-throw to show in UI
+    }
+    return [];
+  }
+
+  static Future<String?> sendMessage(int receiverId, String content) async {
+    try {
+      if (currentUser == null) return 'Not logged in';
+      final uri = Uri.parse('$baseUrl/messages');
+      debugPrint('🔍 Send Message Request: $uri');
+      
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'senderId': currentUser!.id,
+          'receiverId': receiverId,
+          'content': content
+        }),
+      );
+      debugPrint('🔍 Send Message Response: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        return null; // Success (no error)
+      } else {
+        return 'Server Error: ${response.statusCode} - ${response.body}';
+      }
+    } catch (e) {
+      debugPrint('❌ Error sending message: $e');
+      return 'Network Error: $e';
+    }
+  }
+
+  static Future<List<dynamic>?> getChatHistory(int otherUserId) async {
+    try {
+      if (currentUser == null) return [];
+      final response = await http.get(Uri.parse('$baseUrl/messages/${currentUser!.id}/$otherUserId'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Error fetching chat history: $e');
+      return null; // Return null on error so UI knows not to clear list
+    }
+    return null; // Return null on non-200 status too
+  }
+
+  static Future<List<dynamic>> getRecentChats() async {
+    try {
+      if (currentUser == null) return [];
+      final response = await http.get(Uri.parse('$baseUrl/messages/recent/${currentUser!.id}'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Error fetching recent chats: $e');
+    }
+    return [];
   }
 }

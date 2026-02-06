@@ -6,15 +6,21 @@ import 'screens/services_page.dart';
 import 'screens/rentals_page.dart';
 import 'screens/my_bookings_page.dart';
 import 'screens/admin/admin_user_list_screen.dart';
+import 'screens/admin_requests_screen.dart';
 
 import 'services/theme_service.dart';
 import 'screens/chat_screen.dart';
 import 'screens/settings_page.dart';
+import 'screens/chat_search_screen.dart';
+import 'screens/chat_search_screen.dart';
+import 'screens/support_screen.dart';
+import 'services/api_service.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeService.instance.load();
+  await ApiService.loadUserFromPrefs(); // Restore session
   runApp(const MyApp());
 }
 
@@ -49,9 +55,11 @@ class MyApp extends StatelessWidget {
             '/services': (_) => const ServicesPage(),
             '/rentals': (_) => const RentalsPage(),
             '/bookings': (_) => const MyBookingsPage(),
-            '/chat': (_) => const ChatScreen(),
             '/settings': (_) => const SettingsPage(),
             '/admin/users': (_) => const AdminUserListScreen(),
+            '/admin/requests': (_) => const AdminRequestsScreen(),
+            '/chat_search': (_) => const ChatSearchScreen(),
+            '/support': (_) => const SupportScreen(),
           },
         );
       },

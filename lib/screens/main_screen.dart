@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import '../components/app_drawer.dart';
-import '../services/theme_service.dart';
+import '../widgets/app_drawer.dart';
 import '../services/theme_service.dart';
 import 'services_screen.dart';
 import 'home_dashboard_screen.dart';
 import 'rental_finder_screen.dart';
-import 'rental_finder_screen.dart';
-import 'chat_screen.dart';
+import 'chat_search_screen.dart';
 import 'profile_screen.dart';
 import 'settings_page.dart';
+import 'rentals_page.dart';
 
 
 class MainScreen extends StatefulWidget {
@@ -19,15 +18,13 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
   int _selectedIndex = 0;
 
-  static final List<Widget> _pages = <Widget>[
+  final List<Widget> _pages = <Widget>[
     const HomeDashboardScreen(),
-    const RentalFinderScreen(),
-    const ChatScreen(),
+    const RentalsPage(),
+    const ChatSearchScreen(),
   ];
-
 
   void _onItemTapped(int index) {
     setState(() {
@@ -38,9 +35,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       drawer: const AppDrawer(),
-      appBar: AppBar(
+      appBar: _selectedIndex == 1 ? null : AppBar(
         title: const Text('QuickHelp'),
         actions: [
 
@@ -54,7 +50,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline),
-            onPressed: () => Navigator.of(context).pushNamed('/chat'),
+            onPressed: () => Navigator.of(context).pushNamed('/chat_search'),
             tooltip: 'Chat',
           ),
           Padding(
