@@ -1,45 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class RentalFinderScreen extends StatelessWidget {
-  const RentalFinderScreen({super.key});
+  final List<Map<String, dynamic>> rentals;
+  const RentalFinderScreen({super.key, this.rentals = const []});
 
   @override
   Widget build(BuildContext context) {
-    // Premium Dummy Data
-    final rentals = [
-      {
-        'title': 'Luxury Penthouse with View',
-        'price': '₹25,000/mo',
-        'rating': 4.9,
-        'image': 'https://picsum.photos/600/400?image=10',
-        'type': 'Entire Apartment',
-        'location': 'Indiranagar, Bangalore'
-      },
-      {
-        'title': 'Cozy Garden Studio',
-        'price': '₹12,000/mo',
-        'rating': 4.7,
-        'image': 'https://picsum.photos/600/400?image=11',
-        'type': 'Studio',
-        'location': 'Koramangala, Bangalore'
-      },
-      {
-        'title': 'Modern 2BHK Near Tech Park',
-        'price': '₹30,000/mo',
-        'rating': 4.5,
-        'image': 'https://picsum.photos/600/400?image=12',
-        'type': 'Apartment',
-        'location': 'Whitefield, Bangalore'
-      },
-       {
-        'title': 'Shared Room for Students',
-        'price': '₹6,000/mo',
-        'rating': 4.2,
-        'image': 'https://picsum.photos/600/400?image=13',
-        'type': 'Shared Room',
-        'location': 'BTM Layout, Bangalore'
-      },
-    ];
+
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -74,15 +42,26 @@ class RentalFinderScreen extends StatelessWidget {
                     // Image Section
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      child: Stack(
+                            child: Stack(
                         children: [
-                          Image.network(
-                            r['image'] as String,
-                            height: 180,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(height: 180, color: Colors.grey[200]),
-                          ),
+                          (r['images'] != null && (r['images'] as List).isNotEmpty) 
+                          ? (r['images'][0].toString().startsWith('http') 
+                              ? Image.network(
+                                  r['images'][0],
+                                  height: 180,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(height: 180, color: Colors.grey[200]),
+                                )
+                              : Image.memory(
+                                  base64Decode(r['images'][0]),
+                                  height: 180,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(height: 180, color: Colors.grey[200]),
+                                )
+                            )
+                          : Container(height: 180, color: Colors.grey[200], child: const Icon(Icons.home, size: 50, color: Colors.grey)),
                           Positioned(
                             top: 10,
                             right: 10,
@@ -97,7 +76,7 @@ class RentalFinderScreen extends StatelessWidget {
                                   const Icon(Icons.star, size: 14, color: Colors.amber),
                                   const SizedBox(width: 4),
                                   Text(
-                                    r['rating'].toString(),
+                                    (r['rating'] as num?)?.toString() ?? '4.5',
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                   ),
                                 ],
@@ -118,7 +97,7 @@ class RentalFinderScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                r['type'] as String,
+                                r['tenantType'] ?? 'Apartment',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
@@ -127,7 +106,7 @@ class RentalFinderScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                r['price'] as String,
+                                r['price'] ?? '',
                                 style: TextStyle(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -138,7 +117,7 @@ class RentalFinderScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            r['title'] as String,
+                            r['title'] ?? '',
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -151,7 +130,7 @@ class RentalFinderScreen extends StatelessWidget {
                               Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[500]),
                               const SizedBox(width: 4),
                               Text(
-                                r['location'] as String,
+                                r['location'] ?? 'Unknown Location',
                                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
                               ),
                             ],

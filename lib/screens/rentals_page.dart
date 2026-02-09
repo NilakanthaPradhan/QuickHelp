@@ -8,6 +8,9 @@ import 'package:latlong2/latlong.dart' as lat;
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:geocoding/geocoding.dart';
 import '../widgets/aesthetic_widgets.dart';
+import '../services/api_service.dart';
+import 'dart:convert';
+
 
 class RentalsPage extends StatefulWidget {
   const RentalsPage({super.key});
@@ -72,35 +75,34 @@ class _RentalsPageState extends State<RentalsPage> {
 
 
   // Dummy rentals to display even before user location is available
-  final List<Map<String, dynamic>> _dummyRentals = [
-    {
-      'title': 'Cozy Room Near Lake',
-      'price': '₹8000',
-      'lat': 12.9716,
-      'lng': 77.5946,
-      'rating': 4.6,
-      'images': ['https://picsum.photos/600/300?image=101', 'https://picsum.photos/600/300?image=102'],
-      'description': 'A calm cozy room near the lake with free Wi-Fi and breakfast.'
-    },
-    {
-      'title': 'Downtown Studio',
-      'price': '₹10000',
-      'lat': 12.9725,
-      'lng': 77.5890,
-      'rating': 4.4,
-      'images': ['https://picsum.photos/600/300?image=103'],
-      'description': 'Modern studio apartment in the heart of town.'
-    },
-    {
-      'title': 'Budget Room with Window',
-      'price': '₹6000',
-      'lat': 12.9680,
-      'lng': 77.5965,
-      'rating': 4.1,
-      'images': ['https://picsum.photos/600/300?image=104'],
-      'description': 'Affordable and clean room, close to public transport.'
-    },
-  ];
+  List<Map<String, dynamic>> _rentals = [];
+  bool _loadingRentals = true;
+
+  Future<void> _fetchRentals() async {
+    try {
+      final data = await ApiService.getRentals();
+      if (mounted) {
+        setState(() {
+          _rentals = data.map((e) => {
+            'title': e['title'] ?? 'No Title',
+            'price': e['price'] ?? 'Contact for Price',
+            'lat': (e['lat'] as num?)?.toDouble() ?? 0.0,
+            'lng': (e['lng'] as num?)?.toDouble() ?? 0.0,
+            'rating': 4.5, 
+            'images': (e['photos'] as List?)?.map((p) => p.toString()).toList() ?? [], 
+            'description': e['description'] ?? 'No description',
+            'ownerName': e['ownerName'],
+            'ownerPhone': e['ownerPhone'],
+            'tenantType': e['tenantType']
+          }).cast<Map<String, dynamic>>().toList();
+          _loadingRentals = false;
+        });
+      }
+    } catch (e) {
+       debugPrint('Error loading rentals: $e');
+       if (mounted) setState(() => _loadingRentals = false);
+    }
+  }
 
   Future<void> _getLocation() async {
     setState(() => _loadingLocation = true);
@@ -140,16 +142,9 @@ class _RentalsPageState extends State<RentalsPage> {
   }
 
   List<fm.Marker> _rentalMarkers() {
-    if (_currentPosition == null) return [];
-    final lat.LatLng center = lat.LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-    // create sample nearby rentals
-    final sample = [
-      {'title': 'Cozy Room A', 'price': '₹8000', 'lat': center.latitude + 0.002, 'lng': center.longitude + 0.002},
-      {'title': 'Comfort Stay B', 'price': '₹10000', 'lat': center.latitude - 0.0025, 'lng': center.longitude + 0.0015},
-      {'title': 'Budget Room C', 'price': '₹6000', 'lat': center.latitude + 0.0015, 'lng': center.longitude - 0.002},
-    ];
-
-    return sample.map((r) => fm.Marker(
+    if (_currentPosition == null && _rentals.isEmpty) return [];
+    
+    return _rentals.map((r) => fm.Marker(
           point: lat.LatLng(r['lat'] as double, r['lng'] as double),
           width: 80,
           height: 80,
@@ -163,7 +158,7 @@ class _RentalsPageState extends State<RentalsPage> {
   @override
   void initState() {
     super.initState();
-    // try to get location quickly
+    _fetchRentals();
     WidgetsBinding.instance.addPostFrameCallback((_) => _getLocation());
   }
 
@@ -198,12 +193,19 @@ class _RentalsPageState extends State<RentalsPage> {
                     itemCount: images.length,
                     itemBuilder: (context, i) => ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        images[i],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stack) => Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
-                      ),
+                      child: (images[i].startsWith('http')
+                          ? Image.network(
+                              images[i],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (context, error, stack) => Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
+                            )
+                          : Image.memory(
+                              base64Decode(images[i]),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (context, error, stack) => Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
+                            )),
                     ),
                   ),
                 ),
@@ -279,6 +281,11 @@ class _RentalsPageState extends State<RentalsPage> {
       ),
       body: Stack(
         children: [
+          if (_loadingRentals)
+            const Center(child: CircularProgressIndicator())
+          else
+            Stack(
+              children: [
           // Background Map (Full Screen effect behind content, or top half)
           Positioned.fill(
              child: Column(
@@ -288,7 +295,9 @@ class _RentalsPageState extends State<RentalsPage> {
                    child: fm.FlutterMap(
                       mapController: _mapController,
                       options: fm.MapOptions(
-                        initialCenter: lat.LatLng(_dummyRentals.first['lat'] as double, _dummyRentals.first['lng'] as double),
+                        initialCenter: _currentPosition != null 
+                            ? lat.LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                            : const lat.LatLng(12.9716, 77.5946),
                         initialZoom: 14.0,
                       ),
                       children: [
@@ -430,9 +439,9 @@ class _RentalsPageState extends State<RentalsPage> {
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           scrollDirection: Axis.horizontal,
-                          itemCount: _dummyRentals.length,
+                          itemCount: _rentals.length,
                           itemBuilder: (context, i) {
-                            final r = _dummyRentals[i];
+                            final r = _rentals[i];
                             return Container(
                               width: 260,
                               margin: const EdgeInsets.only(right: 16, bottom: 20),
@@ -457,13 +466,23 @@ class _RentalsPageState extends State<RentalsPage> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                                      child: Image.network(
-                                        r['images'][0],
-                                        height: 150,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (ctx, _, __) => Container(height: 150, color: Colors.grey[200]),
-                                      ),
+                                      child: (r['images'] != null && (r['images'] as List).isNotEmpty)
+                                          ? (r['images'][0].toString().startsWith('http')
+                                              ? Image.network(
+                                                  r['images'][0],
+                                                  height: 150,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (ctx, _, __) => Container(height: 150, color: Colors.grey[200]),
+                                                )
+                                              : Image.memory(
+                                                  base64Decode(r['images'][0]),
+                                                  height: 150,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (ctx, _, __) => Container(height: 150, color: Colors.grey[200]),
+                                                ))
+                                          : Container(height: 150, color: Colors.grey[200], child: const Icon(Icons.home, size: 50, color: Colors.grey)),
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(12),
@@ -504,7 +523,7 @@ class _RentalsPageState extends State<RentalsPage> {
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         child: Text('All Listings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       ),
-                      const RentalFinderScreen(), // Embed the grid/list finder here
+                      RentalFinderScreen(rentals: _rentals), // Embed the grid/list finder here
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -512,6 +531,8 @@ class _RentalsPageState extends State<RentalsPage> {
               );
             },
           ),
+              ],
+            ),
         ],
       ),
     );

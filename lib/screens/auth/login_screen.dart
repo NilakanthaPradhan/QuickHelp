@@ -15,7 +15,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isAdmin = false; // Toggle for admin login
 
   Future<void> _login() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -25,28 +24,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    if (_isAdmin) {
-      // Existing admin login flow
-      final success = await ApiService.adminLogin(_usernameController.text, _passwordController.text);
-      if (mounted) {
-        setState(() => _isLoading = false);
-        if (success) {
-           Navigator.pushReplacementNamed(context, '/main'); // Or specifically to admin panel?
-           // For now, main screen handles admin view if role is admin (need to ensure this)
-        } else {
-           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid Admin Credentials')));
-        }
-      }
-    } else {
-      // User login
-      final user = await ApiService.login(_usernameController.text, _passwordController.text);
-      if (mounted) {
-        setState(() => _isLoading = false);
-        if (user != null) {
-          Navigator.pushReplacementNamed(context, '/main');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid username or password')));
-        }
+    // User login
+    final user = await ApiService.login(_usernameController.text, _passwordController.text);
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (user != null) {
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid username or password')));
       }
     }
   }
@@ -93,34 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 32),
                       
-                      // Toggle User/Admin
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildToggleTab('User', !_isAdmin, () {
-                              setState(() {
-                                _isAdmin = false;
-                                _usernameController.clear();
-                                _passwordController.clear();
-                              });
-                            }),
-                            _buildToggleTab('Admin', _isAdmin, () {
-                              setState(() {
-                                _isAdmin = true;
-                                _usernameController.clear();
-                                _passwordController.clear();
-                              });
-                            }),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 32),
-
+ 
                       TextField(
                         controller: _usernameController,
                         decoration: InputDecoration(
@@ -158,28 +117,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: _isLoading 
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text(_isAdmin ? 'Login as Admin' : 'Login', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       
-                      if (!_isAdmin) ...[
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text("Don't have an account? "),
-                            GestureDetector(
-                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                               child: const Text('Register', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: _joinAsGuest,
-                          child: const Text('Continue as Guest', style: TextStyle(color: Colors.grey)),
-                        ),
-                      ]
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Don't have an account? "),
+                          GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                              child: const Text('Register', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: _joinAsGuest,
+                        child: const Text('Continue as Guest', style: TextStyle(color: Colors.grey)),
+                      ),
                     ],
                   ),
                 ),
@@ -191,24 +148,5 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildToggleTab(String text, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blueAccent : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[600],
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
+
 }

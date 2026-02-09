@@ -5,10 +5,8 @@ import '../models/user_model.dart';
 import '../screens/auth/login_screen.dart';
 import '../services/theme_service.dart';
 import '../screens/join_services_screen.dart';
-import '../screens/admin_login_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/settings_page.dart';
-import '../screens/admin_chat_list_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -21,7 +19,7 @@ class AppDrawer extends StatelessWidget {
         valueListenable: ApiService.userNotifier,
         builder: (context, user, child) {
           final bool isGuest = user == null || user.id == -1;
-          final bool isAdmin = user != null && user.role == 'ADMIN';
+
 
           return ListView(
             padding: EdgeInsets.zero,
@@ -85,31 +83,7 @@ class AppDrawer extends StatelessWidget {
                 ),
               ],
               
-              if (isAdmin) ...[
-                const Divider(),
-                const Padding(
-                  padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
-                  child: Text('Admin Panel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                ),
-                 ListTile(
-                  leading: const Icon(Icons.people),
-                  title: const Text('Manage Users'),
-                  onTap: () => Navigator.pushNamed(context, '/admin/users'),
-                ),
-                 ListTile(
-                  leading: const Icon(Icons.verified_user),
-                  title: const Text('Provider Requests'),
-                  onTap: () => Navigator.pushNamed(context, '/admin/requests'),
-                ),
-                 ListTile(
-                  leading: const Icon(Icons.chat_bubble_outline),
-                  title: const Text('All Chats (Support)'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-                  },
-                ),
-              ],
+
 
               const Divider(),
               Padding(

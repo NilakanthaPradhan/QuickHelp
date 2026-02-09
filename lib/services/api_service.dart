@@ -74,19 +74,7 @@ class ApiService {
     return [];
   }
 
-  static Future<bool> createProvider(Map<String, dynamic> provider) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/providers'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(provider),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error creating provider: $e');
-      return false;
-    }
-  }
+
 
   static Future<bool> submitProviderRequest(
       Map<String, String> fields, var imageFile) async {
@@ -112,60 +100,22 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getProviderRequests() async {
+  static Future<List<User>> getAllUsers() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/provider-requests'));
+      debugPrint('Fetching users from: $baseUrl/admin/users');
+      final response = await http.get(Uri.parse('$baseUrl/admin/users'));
+      debugPrint('GetUsers status: ${response.statusCode}');
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final List<dynamic> list = jsonDecode(response.body);
+        debugPrint('Users found: ${list.length}');
+        return list.map((e) => User.fromJson(e)).toList();
+      } else {
+        debugPrint('GetUsers failed: ${response.body}');
       }
     } catch (e) {
-      debugPrint('Error fetching provider requests: $e');
+      debugPrint('Error fetching users: $e');
     }
     return [];
-  }
-
-  static Future<bool> approveRequest(int id) async {
-    try {
-      final response = await http.post(Uri.parse('$baseUrl/provider-requests/$id/approve'));
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error approving request: $e');
-      return false;
-    }
-  }
-
-  static Future<bool> rejectRequest(int id) async {
-    try {
-      final response = await http.post(Uri.parse('$baseUrl/provider-requests/$id/reject'));
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error rejecting request: $e');
-      return false;
-    }
-  }
-
-  static Future<bool> adminLogin(String username, String password) async {
-    try {
-      debugPrint('🔐 Admin login attempt for username: $username');
-      // Reuse standard login to authenticate against DB
-      final user = await login(username, password);
-      debugPrint('🔐 Login result - User: ${user?.username}, Role: ${user?.role}, FullName: ${user?.fullName}');
-      if (user != null && user.role == 'ADMIN') {
-        currentUser = user; // Set current user with full DB details
-        debugPrint('✅ Admin login successful! Current user set to: ${currentUser?.username}');
-        return true;
-      } else if (user != null) {
-        // Logged in but not admin
-        debugPrint('❌ Login successful but user is not ADMIN. Role: ${user.role}');
-        currentUser = null; // Clear if strict about admin session
-        return false;
-      }
-      debugPrint('❌ Admin login failed - no user returned');
-      return false;
-    } catch (e) {
-      debugPrint('❌ Error logging in admin: $e');
-      return false;
-    }
   }
 
   // --- User Auth & Persistence ---
@@ -257,23 +207,7 @@ class ApiService {
     }
   }
 
-  static Future<List<User>> getAllUsers() async {
-    try {
-      debugPrint('Fetching users from: $baseUrl/admin/users');
-      final response = await http.get(Uri.parse('$baseUrl/admin/users'));
-      debugPrint('GetUsers status: ${response.statusCode}');
-      if (response.statusCode == 200) {
-        final List<dynamic> list = jsonDecode(response.body);
-        debugPrint('Users found: ${list.length}');
-        return list.map((e) => User.fromJson(e)).toList();
-      } else {
-        debugPrint('GetUsers failed: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('Error fetching users: $e');
-    }
-    return [];
-  }
+
 
   static Future<bool> updateProfile(User user, var imageFile) async {
     try {
@@ -311,11 +245,7 @@ class ApiService {
 
   static Future<List<User>> searchUsers(String query) async {
     try {
-      final url = '$baseUrl/api/users/search?query=$query'; // Check if baseUrl already has /api
-      // Wait, Config.baseUrl already includes /api? 
-      // Config.localUrl = 'http://172.23.72.126:8080/api';
-      // So '$baseUrl/users/search' -> '.../api/users/search'. 
-      // Let's verify standard usage.
+      // Config.baseUrl usually includes /api but let's be safe
       final uri = Uri.parse('$baseUrl/users/search?query=$query');
       debugPrint('🔍 Search Request: $uri');
       
@@ -385,6 +315,17 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('Error fetching recent chats: $e');
+    }
+    return [];
+  }
+  static Future<List<dynamic>> getRentals() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/rentals'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Error fetching rentals: $e');
     }
     return [];
   }

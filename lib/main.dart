@@ -5,13 +5,9 @@ import 'screens/profile_screen.dart';
 import 'screens/services_page.dart';
 import 'screens/rentals_page.dart';
 import 'screens/my_bookings_page.dart';
-import 'screens/admin/admin_user_list_screen.dart';
-import 'screens/admin_requests_screen.dart';
 
 import 'services/theme_service.dart';
-import 'screens/chat_screen.dart';
 import 'screens/settings_page.dart';
-import 'screens/chat_search_screen.dart';
 import 'screens/chat_search_screen.dart';
 import 'screens/support_screen.dart';
 import 'services/api_service.dart';
@@ -56,8 +52,6 @@ class MyApp extends StatelessWidget {
             '/rentals': (_) => const RentalsPage(),
             '/bookings': (_) => const MyBookingsPage(),
             '/settings': (_) => const SettingsPage(),
-            '/admin/users': (_) => const AdminUserListScreen(),
-            '/admin/requests': (_) => const AdminRequestsScreen(),
             '/chat_search': (_) => const ChatSearchScreen(),
             '/support': (_) => const SupportScreen(),
           },

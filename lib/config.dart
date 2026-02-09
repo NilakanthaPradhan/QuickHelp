@@ -1,6 +1,6 @@
 class Config {
   // Toggle this for local vs production
-  static const bool isProd = true;
+  static const bool isProd = false;
 
   // Since we use 'adb reverse tcp:8080 tcp:8080', the device can access computer's localhost:8080
   // static const String localUrl = 'http://127.0.0.1:8080/api'; 

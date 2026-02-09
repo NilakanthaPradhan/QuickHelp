@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_drawer.dart';
 import '../services/theme_service.dart';
-import 'services_screen.dart';
 import 'home_dashboard_screen.dart';
 import 'rental_finder_screen.dart';
 import 'chat_search_screen.dart';
 import 'profile_screen.dart';
-import 'settings_page.dart';
 import 'rentals_page.dart';
 
 
