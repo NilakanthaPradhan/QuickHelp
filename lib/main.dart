@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/profile_screen.dart';
@@ -12,11 +13,11 @@ import 'screens/chat_search_screen.dart';
 import 'screens/support_screen.dart';
 import 'services/api_service.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeService.instance.load();
-  await ApiService.loadUserFromPrefs(); // Restore session
+  // We no longer await loadUserFromPrefs here; the SplashScreen will handle it gracefully 
+  // with an animation instead of a blank black/white freezing screen.
   runApp(const MyApp());
 }
 
@@ -41,11 +42,10 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
           ),
           themeMode: ThemeService.instance.themeMode,
-          // Start with the slider screen
-          // Start with the slider screen
-          home: const LoginScreen(),
+          // Start with the beautiful splash screen that checks login state
+          home: const SplashScreen(),
           routes: {
-            // '/welcome': (_) => const WelcomeSliderScreen(), // Optional if we want to keep it
+            '/login': (_) => const LoginScreen(),
             '/main': (_) => const MainScreen(),
             '/profile': (_) => const ProfileScreen(),
             '/services': (_) => const ServicesPage(),
