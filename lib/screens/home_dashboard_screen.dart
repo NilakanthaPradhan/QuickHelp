@@ -125,7 +125,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                  )
                 else
                  Text(
-                   'What do you need help with today?', 
+                   'Available AC Repair & Services', 
                    style: TextStyle(
                      color: Colors.white.withOpacity(0.85), 
                      fontSize: 16,
