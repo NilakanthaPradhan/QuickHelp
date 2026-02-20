@@ -169,9 +169,13 @@ class _RentalsPageState extends State<RentalsPage> {
       'https://picsum.photos/800/400?random=3',
     ];
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
       builder: (_) => DraggableScrollableSheet(
         expand: false,
@@ -185,7 +189,7 @@ class _RentalsPageState extends State<RentalsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(rental['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(rental['title'] as String, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 160,
@@ -198,13 +202,13 @@ class _RentalsPageState extends State<RentalsPage> {
                               images[i],
                               fit: BoxFit.cover,
                               width: double.infinity,
-                              errorBuilder: (context, error, stack) => Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
+                              errorBuilder: (context, error, stack) => Container(color: isDark ? Colors.grey[800] : Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
                             )
                           : Image.memory(
                               base64Decode(images[i]),
                               fit: BoxFit.cover,
                               width: double.infinity,
-                              errorBuilder: (context, error, stack) => Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
+                              errorBuilder: (context, error, stack) => Container(color: isDark ? Colors.grey[800] : Colors.grey[300], child: const Center(child: Icon(Icons.broken_image))),
                             )),
                     ),
                   ),
@@ -214,13 +218,13 @@ class _RentalsPageState extends State<RentalsPage> {
                   children: [
                     const Icon(Icons.star, color: Colors.amber),
                     const SizedBox(width: 6),
-                    Text(((rental['rating'] as num?)?.toDouble() ?? 4.2).toStringAsFixed(1)),
+                    Text(((rental['rating'] as num?)?.toDouble() ?? 4.2).toStringAsFixed(1), style: TextStyle(color: theme.colorScheme.onSurface)),
                     const Spacer(),
-                    Text('Price: ${rental['price']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Price: ${rental['price']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(rental['description'] as String? ?? 'A comfortable place to stay. Clean rooms, friendly host, and good location.'),
+                Text(rental['description'] as String? ?? 'A comfortable place to stay. Clean rooms, friendly host, and good location.', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.8))),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -262,23 +266,11 @@ class _RentalsPageState extends State<RentalsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      extendBodyBehindAppBar: true, 
-      appBar: AppBar(
-        title: const Text('Find Your Home 🏠', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-        backgroundColor: Colors.white.withOpacity(0.8),
-        elevation: 0,
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.0)],
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: Colors.transparent, // Let main_screen background show through
       body: Stack(
         children: [
           if (_loadingRentals)
@@ -302,7 +294,10 @@ class _RentalsPageState extends State<RentalsPage> {
                       ),
                       children: [
                         fm.TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          // Using a dark map tile variant if in dark mode
+                          urlTemplate: isDark 
+                              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.quickhelp.app',
                         ),
                         MarkerClusterLayerWidget(
@@ -338,7 +333,7 @@ class _RentalsPageState extends State<RentalsPage> {
                       ],
                     ),
                  ),
-                 Expanded(flex: 4, child: Container(color: Colors.white)), // Placeholder for list
+                 Expanded(flex: 4, child: Container(color: theme.colorScheme.background)), 
                ],
              ),
           ),
@@ -352,21 +347,24 @@ class _RentalsPageState extends State<RentalsPage> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))
+                      BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 15, offset: const Offset(0, 5))
                     ],
+                    border: Border.all(color: isDark ? Colors.white12 : Colors.transparent),
                   ),
                   child: TextField(
                     controller: _searchController,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                     decoration: InputDecoration(
-                      hintText: 'Search "Bangalore"...',
-                      prefixIcon: const Icon(Icons.search, color: Colors.deepPurple),
+                      hintText: 'Search locations...',
+                      hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary),
                       suffixIcon: _isSearching
                           ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
                           : IconButton(
-                              icon: const Icon(Icons.my_location, color: Colors.blue),
+                              icon: Icon(Icons.my_location, color: theme.colorScheme.primary),
                               onPressed: _getLocation,
                             ),
                       border: InputBorder.none,
@@ -381,21 +379,21 @@ class _RentalsPageState extends State<RentalsPage> {
                     margin: const EdgeInsets.only(top: 10),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10)],
                     ),
                     child: ListView.separated(
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
                       itemCount: _suggestions.length > 5 ? 5 : _suggestions.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, __) => Divider(height: 1, color: isDark ? Colors.white12 : Colors.grey.shade200),
                       itemBuilder: (context, i) {
                         final loc = _suggestions[i];
                         return ListTile(
                           dense: true,
-                          leading: const Icon(Icons.location_on_outlined, size: 18, color: Colors.grey),
-                          title: Text('${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}'),
+                          leading: Icon(Icons.location_on_outlined, size: 18, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                          title: Text('${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}', style: TextStyle(color: theme.colorScheme.onSurface)),
                           onTap: () => _selectLocation(loc),
                         );
                       },
@@ -412,25 +410,30 @@ class _RentalsPageState extends State<RentalsPage> {
             maxChildSize: 0.9,
             builder: (context, scrollController) {
               return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.background,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: const Offset(0, -5))],
+                  border: isDark ? const Border(top: BorderSide(color: Colors.white12, width: 1)) : null,
                 ),
                 child: SingleChildScrollView(
                   controller: scrollController,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Center(
+                      Center(
                         child: Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: SizedBox(width: 40, height: 5, child: DecoratedBox(decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.all(Radius.circular(10))))),
+                          padding: const EdgeInsets.all(12.0),
+                          child: SizedBox(
+                            width: 40, 
+                            height: 5, 
+                            child: DecoratedBox(decoration: BoxDecoration(color: theme.colorScheme.onSurface.withOpacity(0.2), borderRadius: const BorderRadius.all(Radius.circular(10))))
+                          ),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Text('Nearby Places', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        child: Text('Nearby Places', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                       ),
                       
                       // Horizontal Highlight List
@@ -446,11 +449,16 @@ class _RentalsPageState extends State<RentalsPage> {
                               width: 260,
                               margin: const EdgeInsets.only(right: 16, bottom: 20),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.colorScheme.surface,
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08), 
+                                    blurRadius: 12, 
+                                    offset: const Offset(0, 6)
+                                  ),
                                 ],
+                                border: Border.all(color: isDark ? Colors.white12 : Colors.transparent),
                               ),
                               child: InkWell(
                                 onTap: () {
@@ -473,16 +481,16 @@ class _RentalsPageState extends State<RentalsPage> {
                                                   height: 150,
                                                   width: double.infinity,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (ctx, _, __) => Container(height: 150, color: Colors.grey[200]),
+                                                  errorBuilder: (ctx, _, __) => Container(height: 150, color: isDark ? Colors.grey[800] : Colors.grey[200]),
                                                 )
                                               : Image.memory(
                                                   base64Decode(r['images'][0]),
                                                   height: 150,
                                                   width: double.infinity,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (ctx, _, __) => Container(height: 150, color: Colors.grey[200]),
+                                                  errorBuilder: (ctx, _, __) => Container(height: 150, color: isDark ? Colors.grey[800] : Colors.grey[200]),
                                                 ))
-                                          : Container(height: 150, color: Colors.grey[200], child: const Icon(Icons.home, size: 50, color: Colors.grey)),
+                                          : Container(height: 150, color: isDark ? Colors.grey[800] : Colors.grey[200], child: Icon(Icons.home, size: 50, color: isDark ? Colors.grey[600] : Colors.grey)),
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(12),
@@ -492,20 +500,21 @@ class _RentalsPageState extends State<RentalsPage> {
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Text(r['price'], style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 18)),
+                                              Expanded(child: Text(r['price'], style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 18), overflow: TextOverflow.ellipsis)),
+                                              const SizedBox(width: 4),
                                               Row(children: [
                                                 const Icon(Icons.star, color: Colors.amber, size: 16),
-                                                Text(' ${r['rating']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                                Text(' ${r['rating']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                                               ]),
                                             ],
                                           ),
                                           const SizedBox(height: 4),
-                                          Text(r['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                          Text(r['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
                                           const SizedBox(height: 4),
-                                          const Row(
+                                          Row(
                                             children: [
-                                              Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                                              Text(' 2.5 km away', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                              Icon(Icons.location_on_outlined, size: 14, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                                              Text(' 2.5 km away', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
                                             ],
                                           ),
                                         ],
@@ -519,9 +528,9 @@ class _RentalsPageState extends State<RentalsPage> {
                         ),
                       ),
                       
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Text('All Listings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        child: Text('All Listings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.onSurface)),
                       ),
                       RentalFinderScreen(rentals: _rentals), // Embed the grid/list finder here
                       const SizedBox(height: 80),
