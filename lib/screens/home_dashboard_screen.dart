@@ -16,6 +16,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   List<dynamic> _services = [];
   bool _loading = true;
 
+  // A palette of vibrant, premium colors for tiles
+  final List<Color> _tileColors = [
+    Colors.blueAccent,
+    Colors.orangeAccent,
+    Colors.teal,
+    Colors.pinkAccent,
+    Colors.indigoAccent,
+    Colors.green,
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -34,16 +44,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
   IconData _getIcon(String iconName) {
     switch (iconName) {
-      case 'ac_unit': return Icons.ac_unit;
-      case 'cleaning_services': return Icons.cleaning_services;
-      case 'plumbing': return Icons.plumbing;
-      case 'electrical_services': return Icons.electrical_services;
-      case 'format_paint': return Icons.format_paint;
-      case 'handyman': return Icons.handyman;
-      case 'clean_hands': return Icons.clean_hands;
-      case 'grass': return Icons.grass;
-      case 'bug_report': return Icons.bug_report;
-      default: return Icons.build;
+      case 'ac_unit': return Icons.ac_unit_rounded;
+      case 'cleaning_services': return Icons.cleaning_services_rounded;
+      case 'plumbing': return Icons.plumbing_rounded;
+      case 'electrical_services': return Icons.electrical_services_rounded;
+      case 'format_paint': return Icons.format_paint_rounded;
+      case 'handyman': return Icons.handyman_rounded;
+      case 'clean_hands': return Icons.clean_hands_rounded;
+      case 'grass': return Icons.grass_rounded;
+      case 'bug_report': return Icons.bug_report_rounded;
+      default: return Icons.build_rounded;
     }
   }
 
@@ -51,86 +61,146 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   Widget build(BuildContext context) {
     // Show max 4 items
     final displayServices = _services.take(4).toList();
+    final theme = Theme.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner or Greeting
+          // Premium Hero Banner
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.deepPurple, Colors.deepPurple.shade300]),
-              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.tertiary,
+                ]
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ]
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome, ${ApiService.currentUser?.fullName ?? (ApiService.currentUser?.username ?? 'Guest')}!', 
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
+                  'Welcome, \n${ApiService.currentUser?.fullName ?? (ApiService.currentUser?.username ?? 'Guest')} 👋', 
+                  style: const TextStyle(
+                    color: Colors.white, 
+                    fontSize: 28, 
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  )
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 if (ApiService.currentUser?.id == -1) // Guest
                  GestureDetector(
-                   onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false), // Go to login
+                   onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/login', (r) => false), // Go to login
                    child: Container(
-                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                     decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(20)),
+                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                     decoration: BoxDecoration(
+                       color: Colors.white.withOpacity(0.2), 
+                       borderRadius: BorderRadius.circular(30),
+                       border: Border.all(color: Colors.white.withOpacity(0.5))
+                     ),
                      child: const Row(
                        mainAxisSize: MainAxisSize.min,
                        children: [
-                         Text('Join Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                         SizedBox(width: 4),
-                         Icon(Icons.arrow_forward, color: Colors.white, size: 16)
+                         Text('Join QuickHelp Today', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                         SizedBox(width: 8),
+                         Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18)
                        ],
                      ),
                    ),
                  )
                 else
-                 const Text('What do you need help with today?', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                 Text(
+                   'What do you need help with today?', 
+                   style: TextStyle(
+                     color: Colors.white.withOpacity(0.85), 
+                     fontSize: 16,
+                     fontWeight: FontWeight.w500,
+                     letterSpacing: 0.3,
+                   )
+                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           
           // Services Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text('Our Services', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServicesScreen(showAppBar: true)));
-                },
-                child: const Text('View All'),
+              Text(
+                'Our Services', 
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                )
+              ),
+              InkWell(
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServicesScreen(showAppBar: true))),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Text(
+                    'See All', 
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    )
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Services Grid (Limited)
+          // Services Grid
           _loading
-              ? const Center(child: CircularProgressIndicator())
-              : GridView.count(
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(color: theme.colorScheme.primary),
+                  )
+                )
+              : GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.9,
-                  children: displayServices.map((s) {
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: displayServices.length,
+                  itemBuilder: (context, index) {
+                    final s = displayServices[index];
+                    final color = _tileColors[index % _tileColors.length];
+                    
                     return ServiceTile(
                       title: s['name'] as String,
                       icon: _getIcon(s['icon'] as String),
-                      color: Colors.blue, 
+                      color: color, 
                       providerCount: (s['providerCount'] ?? 0) as int,
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServiceBookingPage(serviceTitle: s['name'] as String))),
                     );
-                  }).toList(),
+                  },
                 ),
+                
+          const SizedBox(height: 40),
         ],
       ),
     );
