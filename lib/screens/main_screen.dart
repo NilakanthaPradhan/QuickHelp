@@ -23,6 +23,12 @@ class _MainScreenState extends State<MainScreen> {
     const ChatSearchScreen(),
   ];
 
+  final List<String> _titles = [
+    'QuickHelp',
+    'Rentals Finder 🏠',
+    'Messages',
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -33,13 +39,18 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
+    // Check if the current theme is dark
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
+      backgroundColor: theme.colorScheme.background,
+      extendBodyBehindAppBar: _selectedIndex == 1, // Let map slide under appbar
       drawer: const AppDrawer(),
-      appBar: _selectedIndex == 1 ? null : AppBar(
-        title: const Text('QuickHelp', style: TextStyle(fontWeight: FontWeight.bold)),
+      appBar: AppBar(
+        title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: _selectedIndex == 1 ? theme.colorScheme.surface.withOpacity(0.85) : theme.colorScheme.background,
         actions: [
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline),
@@ -68,29 +79,40 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onItemTapped,
-        elevation: 10,
-        backgroundColor: theme.colorScheme.surface,
-        indicatorColor: theme.colorScheme.primaryContainer,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.room_service_outlined),
-            selectedIcon: Icon(Icons.room_service),
-            label: 'Rentals',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat),
-            label: 'Chats',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            )
+          ]
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _onItemTapped,
+          elevation: 0,
+          backgroundColor: theme.colorScheme.surface, // Better alignment
+          indicatorColor: theme.colorScheme.primaryContainer,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.apartment_outlined),
+              selectedIcon: Icon(Icons.apartment),
+              label: 'Rentals',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.chat_bubble_outline),
+              selectedIcon: Icon(Icons.chat),
+              label: 'Chats',
+            ),
+          ],
+        ),
       ),
     );
   }
