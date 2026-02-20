@@ -7,7 +7,6 @@ import 'chat_search_screen.dart';
 import 'profile_screen.dart';
 import 'rentals_page.dart';
 
-
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -32,20 +31,16 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: _selectedIndex == 1 ? null : AppBar(
-        title: const Text('QuickHelp'),
+        title: const Text('QuickHelp', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         actions: [
-
-          AnimatedBuilder(
-            animation: ThemeService.instance,
-            builder: (context, _) => IconButton(
-              icon: Icon(ThemeService.instance.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
-              onPressed: () => ThemeService.instance.toggleDarkLight(),
-              tooltip: 'Toggle theme',
-            ),
-          ),
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline),
             onPressed: () => Navigator.of(context).pushNamed('/chat_search'),
@@ -53,40 +48,49 @@ class _MainScreenState extends State<MainScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
-            child: IconButton(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
-              icon: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.black87),
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: theme.colorScheme.primary.withOpacity(0.5), width: 2),
+                ),
+                child: CircleAvatar(
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  radius: 16,
+                  child: Icon(Icons.person, color: theme.colorScheme.onPrimaryContainer, size: 20),
+                ),
               ),
-              tooltip: 'Profile',
             ),
           ),
         ],
       ),
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        items: List.generate(3, (i) {
-          final icons = [Icons.home, Icons.room_service, Icons.chat];
-          final labels = ['Home', 'Rentals', 'Chats'];
-          return BottomNavigationBarItem(
-            icon: TweenAnimationBuilder<double>(
-              tween: Tween<double>(
-                begin: 1.0,
-                end: _selectedIndex == i ? 1.2 : 1.0,
-              ),
-              duration: const Duration(milliseconds: 250),
-              builder: (context, scale, child) {
-                return Transform.scale(scale: scale, child: child);
-              },
-              child: Icon(icons[i]),
-            ),
-            label: labels[i],
-          );
-        }),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onItemTapped,
+        elevation: 10,
+        backgroundColor: theme.colorScheme.surface,
+        indicatorColor: theme.colorScheme.primaryContainer,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.room_service_outlined),
+            selectedIcon: Icon(Icons.room_service),
+            label: 'Rentals',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat),
+            label: 'Chats',
+          ),
+        ],
       ),
     );
   }
