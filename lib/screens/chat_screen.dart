@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Add this for formatting
+import 'package:intl/intl.dart'; 
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 
@@ -18,12 +18,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   List<dynamic> _messages = [];
   Timer? _timer;
   bool _loading = true;
-  bool _sending = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // Detect background/foreground
+    WidgetsBinding.instance.addObserver(this); 
     _fetchMessages();
     _startPolling();
   }
@@ -41,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _startPolling();
-      _fetchMessages(refresh: true); // Immediate fetch on return
+      _fetchMessages(refresh: true); 
     } else if (state == AppLifecycleState.paused) {
       _stopPolling();
     }
@@ -59,7 +58,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _fetchMessages({bool refresh = false}) async {
-    // Basic check to avoid overlapping requests if one takes too long
     try {
       final msgs = await ApiService.getChatHistory(widget.receiver.id);
       if (mounted) {
@@ -109,7 +107,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final currentUser = ApiService.currentUser;
     if (currentUser == null) return;
 
-    // OPTIMISTIC UPDATE: Show message immediately
     final tempMsg = {
       'senderId': currentUser.id,
       'receiverId': widget.receiver.id,
@@ -123,16 +120,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     });
     _scrollToBottom();
     
-    // Send to backend
-    // Send to backend
     final result = await ApiService.sendMessage(widget.receiver.id, text);
     
     if (mounted) {
       if (result != null) {
-        // If failed, remove the temp message and show error
         setState(() {
            _messages.remove(tempMsg);
-           _msgController.text = text; // Restore text
+           _msgController.text = text; 
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -142,31 +136,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ),
         );
       } else {
-        // Success: Refresh to get the real message ID/timestamp from server
         _fetchMessages(refresh: true);
       }
     }
   }
 
-  String _formatTimestamp(String? isoString) {
-    if (isoString == null) return '';
-    try {
-      final dt = DateTime.parse(isoString).toLocal();
-      return DateFormat('h:mm a').format(dt); // Requires intl package, or manual
-    } catch (e) {
-      return '';
-    }
-  }
-  
-  // Manual formatter if intl not available
   String _simpleTime(String? isoString) {
      if (isoString == null) return '';
     try {
       final dt = DateTime.parse(isoString).toLocal();
-      String hour = dt.hour > 12 ? '${dt.hour - 12}' : '${dt.hour == 0 ? 12 : dt.hour}';
-      String minute = dt.minute.toString().padLeft(2, '0');
-      String period = dt.hour >= 12 ? 'PM' : 'AM';
-      return '$hour:$minute $period';
+      return DateFormat('h:mm a').format(dt); 
     } catch (e) {
       return '';
     }
@@ -174,6 +153,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ValueListenableBuilder<User?>(
       valueListenable: ApiService.userNotifier,
       builder: (context, currentUser, child) {
@@ -182,19 +164,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
         
         return Scaffold(
+          backgroundColor: theme.colorScheme.background,
           appBar: AppBar(
+            elevation: 1,
+            backgroundColor: theme.colorScheme.surface,
             title: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.grey[200],
-                  child: const Icon(Icons.person, color: Colors.grey),
+                  backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                  child: Icon(Icons.person, color: theme.colorScheme.primary),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.receiver.fullName, style: const TextStyle(fontSize: 16)),
-                    Text('@${widget.receiver.username}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text(
+                      widget.receiver.fullName, 
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                    ),
+                    Text(
+                      '@${widget.receiver.username}', 
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6))
+                    ),
                   ],
                 ),
               ],
@@ -204,93 +195,170 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             children: [
               Expanded(
                 child: _loading 
-                ? const Center(child: CircularProgressIndicator()) 
+                ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)) 
                 : _messages.isEmpty 
-                  ? Center(child: Text('Say hi to ${widget.receiver.fullName}! 👋', style: const TextStyle(color: Colors.grey)))
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.mark_chat_unread_rounded, size: 64, color: theme.colorScheme.primary.withOpacity(0.5)),
+                          const SizedBox(height: 16),
+                          Text('Say hi to ${widget.receiver.fullName}! 👋', 
+                            style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 16)
+                          ),
+                        ]
+                      )
+                    )
                   : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final msg = _messages[index];
-                      // FORCE STRING COMPARISON to avoid int vs String mismatch
+                      // FORCE STRING COMPARISON
                       final isMe = msg['senderId'].toString() == currentUser.id.toString();
                       final timestamp = _simpleTime(msg['timestamp']);
 
-                      return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isMe ? Theme.of(context).primaryColor : Colors.grey[200],
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(16),
-                              topRight: const Radius.circular(16),
-                              bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                              bottomRight: isMe ? Radius.zero : const Radius.circular(16),
-                            ),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
-                            ]
-                          ),
-                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                msg['content'] ?? '',
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : Colors.black87,
-                                  fontSize: 16
-                                ),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (!isMe) ...[
+                              CircleAvatar(
+                                radius: 12,
+                                backgroundColor: theme.colorScheme.secondary.withOpacity(0.2),
+                                child: Text(widget.receiver.fullName[0].toUpperCase(), style: TextStyle(fontSize: 10, color: theme.colorScheme.secondary)),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                timestamp, 
-                                style: TextStyle(
-                                  color: isMe ? Colors.white70 : Colors.black45,
-                                  fontSize: 10
-                                ),
-                              ),
+                              const SizedBox(width: 8),
                             ],
-                          ),
+                            
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                decoration: BoxDecoration(
+                                  gradient: isMe ? LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary,
+                                      theme.colorScheme.primary.withOpacity(0.8),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ) : null,
+                                  color: isMe ? null : (isDark ? theme.colorScheme.surfaceVariant : Colors.grey[200]),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(20),
+                                    topRight: const Radius.circular(20),
+                                    bottomLeft: isMe ? const Radius.circular(20) : Radius.zero,
+                                    bottomRight: isMe ? Radius.zero : const Radius.circular(20),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isMe ? theme.colorScheme.primary.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ]
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      msg['content'] ?? '',
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : theme.colorScheme.onSurface,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      timestamp, 
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white.withOpacity(0.7) : theme.colorScheme.onSurface.withOpacity(0.5),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            
+                          ],
                         ),
                       );
                     },
                   ),
               ),
+              
+              // Input Area
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))],
+                  color: theme.colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), 
+                      blurRadius: 10, 
+                      offset: const Offset(0, -4)
+                    )
+                  ],
                 ),
                 child: SafeArea(
                   child: Row(
                     children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.colorScheme.surfaceVariant : Colors.grey[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.add, color: theme.colorScheme.primary),
+                          onPressed: () {}, 
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: _msgController,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: 'Type a message...',
+                            hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
                             filled: true,
-                            fillColor: Colors.grey[100],
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            fillColor: isDark ? theme.colorScheme.surfaceVariant : Colors.grey[100],
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(24),
                               borderSide: BorderSide.none,
                             ),
                           ),
+                          textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _send(),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                          onPressed: _send,
+                      GestureDetector(
+                        onTap: _send,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.colorScheme.primary.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ]
+                          ),
+                          child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                         ),
                       ),
                     ],

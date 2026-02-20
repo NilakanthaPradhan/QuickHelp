@@ -83,12 +83,32 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
+      backgroundColor: theme.colorScheme.background,
+      appBar: AppBar(
+        title: const Text('Messages', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: theme.colorScheme.surface,
+      ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                )
+              ]
+            ),
             child: Column(
               children: [
                 Row(
@@ -96,89 +116,143 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search user by name...',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.search),
+                        decoration: InputDecoration(
+                          hintText: 'Search for people...',
+                          hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                          filled: true,
+                          fillColor: isDark ? theme.colorScheme.surfaceVariant : Colors.grey[100],
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.primary),
                         ),
                         onSubmitted: (_) => _search(),
+                        textInputAction: TextInputAction.search,
                       ),
                     ),
                     if (_searching)
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close_rounded),
                         onPressed: () {
                           _searchController.clear();
                           FocusScope.of(context).unfocus();
                           setState(() => _searching = false);
                         },
-                      ),
+                      )
+                    else 
+                      const SizedBox(width: 12),
                   ],
                 ),
                 if (!_searching) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
+                    height: 50,
                     child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        foregroundColor: theme.colorScheme.onPrimaryContainer,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
                       onPressed: () => Navigator.pushNamed(context, '/support'),
-                      icon: const Icon(Icons.support_agent),
-                      label: const Text('Chat with Support'),
+                      icon: const Icon(Icons.support_agent_rounded),
+                      label: const Text('Contact Support', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ]
               ],
             ),
           ),
-          if (_loading) const LinearProgressIndicator(),
+          if (_loading) 
+             LinearProgressIndicator(color: theme.colorScheme.primary, backgroundColor: theme.colorScheme.surface),
+             
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+            child: Text(
+              _searching ? 'Search Results' : 'Recent Conversations',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onBackground.withOpacity(0.7),
+              ),
+            ),
+          ),
+          
           Expanded(
-            child: _buildList(),
+            child: _buildList(theme, isDark),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildList() {
+  Widget _buildList(ThemeData theme, bool isDark) {
     if (_searching) {
+      if (_users.isEmpty && !_loading) {
+         return Center(
+           child: Column(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               Icon(Icons.search_off_rounded, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.2)),
+               const SizedBox(height: 16),
+               Text('No users found', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+             ],
+           )
+         );
+      }
       return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _users.length,
         itemBuilder: (context, index) {
           final user = _users[index];
-          return ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(user.fullName),
-            subtitle: Text('@${user.username}'),
-            trailing: const Icon(Icons.message),
+          return _buildItemCard(
+            theme: theme,
+            title: user.fullName,
+            subtitle: '@${user.username}',
+            icon: Icons.person_add_rounded,
             onTap: () => _openChat(user),
+            isDark: isDark,
           );
         },
       );
     } else {
-      if (_recentChats.isEmpty) {
-        return const Center(
-          child: Text('No recent chats. Search to start one!'),
+      if (_recentChats.isEmpty && !_loading) {
+        return Center(
+          child: Column(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               Icon(Icons.chat_bubble_outline_rounded, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.2)),
+               const SizedBox(height: 16),
+               Text('No recent chats', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+               const SizedBox(height: 8),
+               Text('Search above to start a conversation', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.4))),
+             ],
+           )
         );
       }
       return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: _recentChats.length,
         itemBuilder: (context, index) {
           final chat = _recentChats[index];
-          // Determine title (Full Name or Username)
           final displayName = chat['fullName'] ?? chat['username'] ?? 'Unknown';
           final lastMsg = chat['lastMessage'] ?? '';
           
-          return ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.history)),
-            title: Text(displayName),
-            subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: const Icon(Icons.chevron_right),
-             onTap: () {
-              // Construct a User object from the map
+          return _buildItemCard(
+            theme: theme,
+            title: displayName,
+            subtitle: lastMsg,
+            icon: Icons.history_rounded,
+            trailingIcon: Icons.chevron_right_rounded,
+            isDark: isDark,
+            onTap: () {
               final user = User(
                 id: chat['id'],
                 username: chat['username'] ?? '',
                 fullName: chat['fullName'] ?? '',
-                role: 'USER', // Default, doesn't matter for chat
+                role: 'USER', 
                 email: '', 
                 phone: '', 
                 address: '',
@@ -191,6 +265,48 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       );
     }
   }
+  
+  Widget _buildItemCard({
+    required ThemeData theme,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    IconData? trailingIcon,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          )
+        ],
+        border: Border.all(color: isDark ? Colors.white12 : Colors.transparent)
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundColor: theme.colorScheme.primaryContainer,
+          child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        trailing: trailingIcon != null ? Icon(trailingIcon, color: theme.colorScheme.primary.withOpacity(0.5)) : const Icon(Icons.chat_bubble_outline_rounded),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        onTap: onTap,
+      ),
+    );
+  }
 
   void _openChat(User user) async {
     await Navigator.push(
@@ -199,7 +315,6 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
         builder: (_) => ChatScreen(receiver: user),
       ),
     );
-    // Refresh recent chats when returning
     _fetchRecentChats();
   }
 }
