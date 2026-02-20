@@ -88,12 +88,6 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
-      appBar: AppBar(
-        title: const Text('Messages', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
-      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -282,7 +276,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           )
@@ -296,12 +290,12 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
           backgroundColor: theme.colorScheme.primaryContainer,
           child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4.0),
-          child: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7))),
         ),
-        trailing: trailingIcon != null ? Icon(trailingIcon, color: theme.colorScheme.primary.withOpacity(0.5)) : const Icon(Icons.chat_bubble_outline_rounded),
+        trailing: trailingIcon != null ? Icon(trailingIcon, color: theme.colorScheme.primary.withOpacity(0.5)) : Icon(Icons.chat_bubble_outline_rounded, color: theme.colorScheme.primary.withOpacity(0.5)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onTap: onTap,
       ),

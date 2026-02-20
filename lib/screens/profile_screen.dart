@@ -83,6 +83,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     if (_user == null) return const Scaffold(body: Center(child: Text("No User Logged In")));
     
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     // Guest View
     if (_user!.id == -1) {
       return Scaffold(
@@ -91,17 +94,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-               const Icon(Icons.account_circle, size: 100, color: Colors.grey),
+               Icon(Icons.account_circle, size: 100, color: theme.colorScheme.onSurface.withOpacity(0.3)),
                const SizedBox(height: 24),
-               const Text('You are observing as a Guest', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+               Text('You are observing as a Guest', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                const SizedBox(height: 16),
-               const Text('Join now to save your profile and bookings.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+               Text('Join now to save your profile and bookings.', textAlign: TextAlign.center, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
                const SizedBox(height: 32),
                ElevatedButton(
                  onPressed: _logout,
                  style: ElevatedButton.styleFrom(
-                   backgroundColor: Colors.blueAccent, 
-                   foregroundColor: Colors.white,
+                   backgroundColor: theme.colorScheme.primary, 
+                   foregroundColor: theme.colorScheme.onPrimary,
                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)
                  ),
                  child: const Text('Login / Register'), // Logout goes back to login screen
@@ -113,8 +116,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         title: const Text('Profile'),
+        backgroundColor: theme.colorScheme.surface,
+        elevation: 0,
         actions: [
           if (!_isEditing)
             IconButton(icon: const Icon(Icons.edit), onPressed: () => setState(() => _isEditing = true)),
@@ -129,31 +135,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: _isEditing ? _pickImage : null,
               child: CircleAvatar(
                 radius: 50,
-                backgroundColor: Colors.grey[200],
+                backgroundColor: isDark ? theme.colorScheme.surfaceVariant : Colors.grey[200],
                 backgroundImage: _imageFile != null 
                     ? FileImage(_imageFile!) 
                     : (_user!.photoData != null 
                         ? MemoryImage(base64Decode(_user!.photoData!)) 
                         : null),
                 child: (_imageFile == null && _user!.photoData == null) 
-                    ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                    ? Icon(Icons.person, size: 50, color: theme.colorScheme.onSurface.withOpacity(0.3))
                     : null,
               ),
             ),
             if (_isEditing)
-               const Padding(padding: EdgeInsets.only(top: 8), child: Text("Tap to change photo", style: TextStyle(color: Colors.grey))),
+               Padding(padding: const EdgeInsets.only(top: 8), child: Text("Tap to change photo", style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)))),
 
             const SizedBox(height: 16),
-            Text(_user!.username, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+            Text(_user!.username, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
             const SizedBox(height: 24),
             
-            _buildTextField("Full Name", _nameController, Icons.badge),
+            _buildTextField("Full Name", _nameController, Icons.badge, theme, isDark),
             const SizedBox(height: 16),
-            _buildTextField("Phone", _phoneController, Icons.phone),
+            _buildTextField("Phone", _phoneController, Icons.phone, theme, isDark),
             const SizedBox(height: 16),
-            _buildTextField("Email", _emailController, Icons.email),
+            _buildTextField("Email", _emailController, Icons.email, theme, isDark),
             const SizedBox(height: 16),
-            _buildTextField("Address", _addressController, Icons.home),
+            _buildTextField("Address", _addressController, Icons.home, theme, isDark),
             
             const SizedBox(height: 32),
             if (_isEditing)
@@ -161,7 +167,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _saveProfile,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primaryContainer, 
+                    foregroundColor: theme.colorScheme.onPrimaryContainer, 
+                    padding: const EdgeInsets.symmetric(vertical: 16)
+                  ),
                   child: const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
@@ -171,16 +181,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
   
-  Widget _buildTextField(String label, TextEditingController controller, IconData icon) {
+  Widget _buildTextField(String label, TextEditingController controller, IconData icon, ThemeData theme, bool isDark) {
     return TextField(
       controller: controller,
       enabled: _isEditing,
+      style: TextStyle(color: theme.colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+        prefixIcon: Icon(icon, color: theme.colorScheme.primary),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: !_isEditing,
-        fillColor: Colors.grey[100],
+        fillColor: isDark ? theme.colorScheme.surfaceVariant : Colors.grey[100],
       ),
     );
   }
